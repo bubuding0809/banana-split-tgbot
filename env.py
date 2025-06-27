@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv(override=True)  # Override existing environment variables if they exist
 
 
 class Env(BaseModel):

@@ -639,6 +639,7 @@ def main():
         ApplicationBuilder()
         .token(env.TELEGRAM_BOT_TOKEN)
         .post_init(post_init)
+        .post_shutdown(post_shutdown)
         .concurrent_updates(True)
         .build()
     )
