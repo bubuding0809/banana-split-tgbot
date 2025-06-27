@@ -36,7 +36,7 @@ from api import (
     GetUserPayload,
 )
 
-# * Setup loggin
+# * Setup logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
@@ -352,6 +352,7 @@ async def chase(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             text="⚠️ The 'chase' command is only available in your private chat with the bot"
         )
+        return
 
     button = KeyboardButtonRequestUsers(
         request_id=0,
@@ -495,7 +496,7 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Check if the bot is in the new members
     bot = next(
         filter(
-            lambda x: x.username == x.username == context.bot.username,
+            lambda x: x.username == context.bot.username,
             new_members,
         )
     )
