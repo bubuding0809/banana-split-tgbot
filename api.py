@@ -76,19 +76,18 @@ class Api:
                 response.raise_for_status()
 
                 data = await response.json()
-                userData = data.get("data")
 
                 return GetUserResult(
                     user=User(
-                        id=userData.get("id"),
-                        first_name=userData.get("firstName"),
-                        last_name=userData.get("lastName"),
-                        username=userData.get("username"),
-                        created_at=userData.get("createdAt"),
-                        updated_at=userData.get("updatedAt"),
+                        id=data.get("id"),
+                        first_name=data.get("firstName"),
+                        last_name=data.get("lastName"),
+                        username=data.get("username"),
+                        created_at=data.get("createdAt"),
+                        updated_at=data.get("updatedAt"),
                     ),
                     status=response.status,
-                    message=data.get("message"),
+                    message="Success",
                 )
         except aiohttp.ClientResponseError as e:
             if e.status == 404:
@@ -107,7 +106,12 @@ class Api:
         try:
             async with self.aio_session.post(
                 "user",
-                json=payload.model_dump(),
+                json={
+                    "userId": payload.user_id,
+                    "firstName": payload.first_name,
+                    "lastName": payload.last_name,
+                    "userName": payload.username,
+                },
             ) as response:
                 response.raise_for_status()
 
@@ -115,7 +119,7 @@ class Api:
 
                 return CreateUserResult(
                     status=response.status,
-                    message=data.get("message"),
+                    message="User created successfully",
                 )
         except Exception as e:
             return e
@@ -126,14 +130,19 @@ class Api:
         try:
             async with self.aio_session.post(
                 "chat",
-                json=payload.model_dump(),
+                json={
+                    "chatId": payload.chat_id,
+                    "chatTitle": payload.chat_title,
+                    "chatType": payload.chat_type,
+                    "chatPhoto": payload.chat_photo_url,
+                },
             ) as response:
                 response.raise_for_status()
                 res = await response.json()
 
                 return CreateChatResult(
                     status=response.status,
-                    message=res.get("message"),
+                    message="Chat created successfully",
                 )
         except Exception as e:
             return e
@@ -142,21 +151,15 @@ class Api:
         self, payload: AddMemberPayload
     ) -> Union[AddMemberResult, Exception]:
         try:
-            async with self.aio_session.patch(
-                f"chat/{payload.chat_id}/members",
-                json={
-                    "user_id": payload.user_id,
-                    "first_name": payload.first_name,
-                    "last_name": payload.last_name,
-                    "username": payload.username,
-                },
+            async with self.aio_session.put(
+                f"chat/{payload.chat_id}/members/{payload.user_id}",
             ) as response:
                 response.raise_for_status()
                 res = await response.json()
 
                 return AddMemberResult(
                     status=response.status,
-                    message=res.get("message"),
+                    message="Member added successfully",
                 )
         except Exception as e:
             return e
