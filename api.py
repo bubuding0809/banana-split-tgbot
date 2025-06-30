@@ -1,7 +1,10 @@
 import aiohttp
+import logging
 from pydantic import BaseModel, Field
 from env import env
 from typing import Optional, Union
+
+logger = logging.getLogger(__name__)
 
 
 class User(BaseModel):
@@ -73,9 +76,9 @@ class Api:
     ) -> Union[GetUserResult, Exception]:
         try:
             async with self.aio_session.get(f"user/{payload.user_id}") as response:
-                response.raise_for_status()
-
                 data = await response.json()
+                logger.debug(f"[API] GET user/{payload.user_id} response: {data}")
+                response.raise_for_status()
 
                 return GetUserResult(
                     user=User(
@@ -90,6 +93,9 @@ class Api:
                     message="Success",
                 )
         except aiohttp.ClientResponseError as e:
+            logger.warning(
+                f"[API] GET user/{payload.user_id} - HTTP {e.status}: {e.message}"
+            )
             if e.status == 404:
                 return GetUserResult(
                     user=None,
@@ -98,53 +104,63 @@ class Api:
                 )
             return e
         except Exception as e:
+            logger.error(f"[API] GET user/{payload.user_id} - Exception: {e}")
             return e
 
     async def create_user(
         self, payload: CreateUserPayload
     ) -> Union[CreateUserResult, Exception]:
         try:
-            async with self.aio_session.post(
-                "user",
-                json={
-                    "userId": payload.user_id,
-                    "firstName": payload.first_name,
-                    "lastName": payload.last_name,
-                    "userName": payload.username,
-                },
-            ) as response:
-                response.raise_for_status()
-
+            request_data = {
+                "userId": payload.user_id,
+                "firstName": payload.first_name,
+                "lastName": payload.last_name,
+                "userName": payload.username,
+            }
+            async with self.aio_session.post("user", json=request_data) as response:
                 data = await response.json()
+                logger.debug(f"[API] POST user response: {data}")
+                response.raise_for_status()
 
                 return CreateUserResult(
                     status=response.status,
                     message="User created successfully",
                 )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(f"[API] POST user - HTTP {e.status}: {e.message}")
+            return CreateUserResult(
+                status=e.status, message=f"HTTP {e.status}: {e.message}"
+            )
         except Exception as e:
+            logger.error(f"[API] POST user - Exception: {e}")
             return e
 
     async def create_chat(
         self, payload: CreateChatPayload
     ) -> Union[CreateChatResult, Exception]:
         try:
-            async with self.aio_session.post(
-                "chat",
-                json={
-                    "chatId": payload.chat_id,
-                    "chatTitle": payload.chat_title,
-                    "chatType": payload.chat_type,
-                    "chatPhoto": payload.chat_photo_url,
-                },
-            ) as response:
+            request_data = {
+                "chatId": payload.chat_id,
+                "chatTitle": payload.chat_title,
+                "chatType": payload.chat_type,
+                "chatPhoto": payload.chat_photo_url,
+            }
+            async with self.aio_session.post("chat", json=request_data) as response:
+                data = await response.json()
+                logger.debug(f"[API] POST chat response: {data}")
                 response.raise_for_status()
-                res = await response.json()
 
                 return CreateChatResult(
                     status=response.status,
                     message="Chat created successfully",
                 )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(f"[API] POST chat - HTTP {e.status}: {e.message}")
+            return CreateChatResult(
+                status=e.status, message=f"HTTP {e.status}: {e.message}"
+            )
         except Exception as e:
+            logger.error(f"[API] POST chat - Exception: {e}")
             return e
 
     async def add_member(
@@ -154,14 +170,27 @@ class Api:
             async with self.aio_session.put(
                 f"chat/{payload.chat_id}/members/{payload.user_id}",
             ) as response:
+                data = await response.json()
+                logger.debug(
+                    f"[API] PUT chat/{payload.chat_id}/members/{payload.user_id} response: {data}"
+                )
                 response.raise_for_status()
-                res = await response.json()
 
                 return AddMemberResult(
                     status=response.status,
                     message="Member added successfully",
                 )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(
+                f"[API] PUT chat/{payload.chat_id}/members/{payload.user_id} - HTTP {e.status}: {e.message}"
+            )
+            return AddMemberResult(
+                status=e.status, message=f"HTTP {e.status}: {e.message}"
+            )
         except Exception as e:
+            logger.error(
+                f"[API] PUT chat/{payload.chat_id}/members/{payload.user_id} - Exception: {e}"
+            )
             return e
 
     async def clean_up(self):
