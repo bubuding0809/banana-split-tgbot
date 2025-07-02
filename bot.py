@@ -67,7 +67,7 @@ START_MESSAGE_GROUP = """
 Let me help you guys manage your shared expenses!
 
 🤔 First time seeing me? 
-⬇️ Get started below ⬇️
+⬇️ Get started with the app ⬇️
 """
 
 HELP_MESSAGE = """
@@ -116,6 +116,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         action=telegram.constants.ChatAction.TYPING,
     )
 
+    message_thread_id = update.message.message_thread_id if update.message else None
+
     # * Handle start process for private bot chat
     # * ==========================================
     if update.effective_chat.type == telegram.constants.ChatType.PRIVATE:
@@ -133,6 +135,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="⚠️ Something went wrong checking user, please try again.",
+                message_thread_id=message_thread_id,
             )
 
         # * User exists - send welcome back message
@@ -151,6 +154,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         ),
                     )
                 ),
+                message_thread_id=message_thread_id,
             )
 
         # * User does not exist - create user
@@ -167,6 +171,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text="⚠️ Something went wrong creating user, please try again.",
+                message_thread_id=message_thread_id,
             )
         else:
             logger.info(
@@ -186,19 +191,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     ),
                 )
             ),
+            message_thread_id=message_thread_id,
         )
 
     # * Handle start process for group chat
     # * ====================================
     else:
         message = START_MESSAGE_GROUP
-        register_url = helpers.create_deep_linked_url(context.bot.username, "register")
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=message,
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(text="Start app 🚀", url=register_url)
-            ),
+            message_thread_id=message_thread_id,
         )
 
     # * Try to pin the bot for the chat
@@ -217,13 +220,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = env.MINI_APP_DEEPLINK.format(
         botusername=context.bot.username, mode="compact", command=base64_encoded
     )
-    inline_button = InlineKeyboardButton("Expenses 💵", url=url)
+    inline_button = InlineKeyboardButton("Banana Splitz", url=url)
     reply_markup = InlineKeyboardMarkup.from_button(inline_button)
 
     pin_message = await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="🤑 Split your expense leh 🤑",
+        text="Start splitting 🍌🍌🍌",
         reply_markup=reply_markup,
+        message_thread_id=message_thread_id,
     )
 
     try:
@@ -240,12 +244,17 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat is None:
         return
 
+    message_thread_id = update.message.message_thread_id if update.message else None
+
     await context.bot.send_chat_action(
         chat_id=update.effective_chat.id,
         action=telegram.constants.ChatAction.TYPING,
+        message_thread_id=message_thread_id,
     )
     await context.bot.send_message(
-        chat_id=update.effective_chat.id, text="Current operation cancelled."
+        chat_id=update.effective_chat.id,
+        text="Current operation cancelled.",
+        message_thread_id=message_thread_id,
     )
 
 
@@ -253,22 +262,31 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat is None:
         return
 
+    message_thread_id = update.message.message_thread_id if update.message else None
+
     await context.bot.send_chat_action(
         chat_id=update.effective_chat.id,
         action=telegram.constants.ChatAction.TYPING,
     )
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=HELP_MESSAGE)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=HELP_MESSAGE,
+        message_thread_id=message_thread_id,
+    )
 
 
 async def pin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat is None:
         return
 
+    message_thread_id = update.message.message_thread_id if update.message else None
+
     if env.MINI_APP_DEEPLINK is None:
         logger.error("[pin]: MINI_APP_DEEPLINK was not set, unable to send pin message")
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Something went wrong, please try again.",
+            message_thread_id=message_thread_id,
         )
         return
 
@@ -282,18 +300,20 @@ async def pin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = env.MINI_APP_DEEPLINK.format(
         botusername=context.bot.username, mode="compact", command=base64_encoded
     )
-    inline_button = InlineKeyboardButton("💵 Expenses", url=url)
+    inline_button = InlineKeyboardButton("Banana Splitz", url=url)
     reply_markup = InlineKeyboardMarkup.from_button(inline_button)
 
     pin_message = await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="🤑 Split your expense leh 🤑",
         reply_markup=reply_markup,
+        message_thread_id=message_thread_id,
     )
 
     try:
         await context.bot.pin_chat_message(
-            chat_id=update.effective_chat.id, message_id=pin_message.id
+            chat_id=update.effective_chat.id,
+            message_id=pin_message.id,
         )
     except telegram.error.BadRequest:
         await pin_message.reply_text(
@@ -305,6 +325,8 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat is None:
         return
 
+    message_thread_id = update.message.message_thread_id if update.message else None
+
     if env.MINI_APP_DEEPLINK is None:
         logger.error(
             "[balance]: MINI_APP_DEEPLINK was not set, unable to send balance message"
@@ -312,6 +334,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Something went wrong, please try again.",
+            message_thread_id=message_thread_id,
         )
         return
 
@@ -338,6 +361,7 @@ async def balance(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=text,
         parse_mode=telegram.constants.ParseMode.MARKDOWN_V2,
         disable_web_page_preview=True,
+        message_thread_id=message_thread_id,
     )
 
 
@@ -504,6 +528,8 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if bot is None:
         return
 
+    message_thread_id = update.message.message_thread_id if update.message else None
+
     full_chat = await context.bot.get_chat(chat_id=update.effective_chat.id)
 
     chat_photo_url: Optional[str] = None
@@ -527,11 +553,13 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"[bot_added] - api.create_chat: {api_result}")
         await update.message.reply_text(
             text="⚠️ Failed to properly initialize the chat. Please try again by removing and re-adding the bot.",
+            message_thread_id=message_thread_id,
         )
     else:
         logger.info(f"Chat created: {api_result.message}")
         await update.message.reply_text(
-            text="🎉 Hello friends, I am here to help your split your expenses 💸!"
+            text="🎉 Hello friends, I am here to help your split your expenses 💸!",
+            message_thread_id=message_thread_id,
         )
 
 
@@ -608,7 +636,7 @@ async def post_init(application: Application):
     # Commands for private chats
     private_commands = [
         *common_commands,
-        BotCommand("chase", "Chase someone for payment"),
+        # BotCommand("chase", "Chase someone for payment"),
     ]
     await application.bot.set_my_commands(
         private_commands, scope=BotCommandScopeAllPrivateChats()
