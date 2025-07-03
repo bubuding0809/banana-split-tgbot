@@ -611,6 +611,50 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+async def set_topic(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat is None:
+        return
+
+    if update.effective_user is None:
+        return
+
+    message_thread_id = update.message.message_thread_id if update.message else None
+
+    if message_thread_id is None or not update.effective_chat.is_forum:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⚠️ This command can only be used in a topic.",
+            message_thread_id=message_thread_id,
+        )
+        return
+
+    api = cast(Optional[Api], context.bot_data.get("api"))
+    if api is None:
+        logger.error("[set_topic]: Api instance not found in bot_data")
+        return
+
+    update_chat_payload = UpdateChatPayload(
+        chat_id=update.effective_chat.id,
+        thread_id=message_thread_id,
+    )
+    api_result = await api.update_chat(update_chat_payload)
+    if isinstance(api_result, Exception):
+        logger.error(f"[set_topic] - api.update_chat: {api_result}")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="⚠️ Failed to set topic. Please try again later.",
+            message_thread_id=message_thread_id,
+        )
+        return
+
+    logger.info(f"[set_topic] - api.update_chat: {api_result.chat}")
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="✅ Topic set successfully! I will now use this topic for all messages.",
+        message_thread_id=message_thread_id,
+    )
+
+
 async def add_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message is None:
         return
@@ -694,6 +738,7 @@ async def post_init(application: Application):
         *common_commands,
         BotCommand("pin", "Pin the expenses mini-app"),
         BotCommand("balance", "View current split balances"),
+        BotCommand("set_topic", "Set the topic for bot notifications"),
     ]
     await application.bot.set_my_commands(
         group_commands, scope=BotCommandScopeAllGroupChats()
@@ -727,6 +772,7 @@ def main():
     help_handler = CommandHandler("help", help)
     pin_handler = CommandHandler("pin", pin)
     chase_handler = CommandHandler("chase", chase)
+    set_topic_handler = CommandHandler("set_topic", set_topic)
     user_shared_handler = MessageHandler(
         filters.StatusUpdate.USERS_SHARED | filters.StatusUpdate.USER_SHARED,
         user_shared,
@@ -742,6 +788,7 @@ def main():
     application.add_handler(pin_handler)
     application.add_handler(balance_handler)
     application.add_handler(chase_handler)
+    application.add_handler(set_topic_handler)
     application.add_handler(user_shared_handler)
     application.add_handler(bot_added_handler)
     application.add_handler(add_member_handler)
