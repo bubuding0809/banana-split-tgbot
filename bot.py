@@ -34,6 +34,7 @@ from api import (
     CreateChatPayload,
     CreateUserPayload,
     GetUserPayload,
+    UpdateChatPayload,
 )
 
 # * Setup logging
@@ -118,6 +119,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message_thread_id = update.message.message_thread_id if update.message else None
 
+    api: Optional[Api] = context.bot_data.get("api")
+    if api is None:
+        return logger.error("[start]: Api instance not found in bot_data")
+
     # * Handle start process for private bot chat
     # * ==========================================
     if update.effective_chat.type == telegram.constants.ChatType.PRIVATE:
@@ -129,10 +134,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 message_thread_id=message_thread_id,
             )
         )
-
-        api: Optional[Api] = context.bot_data.get("api")
-        if api is None:
-            return logger.error("[start]: Api instance not found in bot_data")
 
         # * Check if user exits
         get_user_result = await api.get_user(
@@ -205,10 +206,32 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # * Handle start process for group chat
     # * ====================================
     else:
-        message = START_MESSAGE_GROUP
+
+        async def update_chat_task(chat_id: int, thread_id: Optional[int] = None):
+            payload = UpdateChatPayload(chat_id=chat_id, thread_id=thread_id)
+            api_result = await api.update_chat(payload)
+            if isinstance(api_result, Exception):
+                logger.error(f"[start] - api.update_chat: {api_result}")
+            else:
+                logger.info(
+                    f"[start] - api.update_chat: Chat updated: {api_result.chat}"
+                )
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text="💬 Topic detected, I will now use this topic for all messages.",
+                    message_thread_id=thread_id,
+                )
+
+        if message_thread_id is not None:
+            asyncio.create_task(
+                update_chat_task(
+                    chat_id=update.effective_chat.id, thread_id=message_thread_id
+                )
+            )
+
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=message,
+            text=START_MESSAGE_GROUP,
             message_thread_id=message_thread_id,
         )
 
@@ -563,10 +586,27 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text="⚠️ Failed to properly initialize the chat. Please try again by removing and re-adding the bot.",
             message_thread_id=message_thread_id,
         )
+        return
+
+    logger.info(f"Chat created: {api_result.message}")
+    await update.message.reply_text(
+        text="🎉 Hello friends, I am here to help your split your expenses!",
+        message_thread_id=message_thread_id,
+    )
+
+    if update.effective_chat.is_forum:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Use `/start@{helpers.escape_markdown(context.bot.username)}` in your desired 💬 topic to start using me\\!",
+            message_thread_id=message_thread_id,
+            parse_mode=ParseMode.MARKDOWN_V2,
+        )
     else:
-        logger.info(f"Chat created: {api_result.message}")
-        await update.message.reply_text(
-            text="🎉 Hello friends, I am here to help your split your expenses 💸!",
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=helpers.escape_markdown(
+                f"Use /start@{context.bot.username} to start using me!"
+            ),
             message_thread_id=message_thread_id,
         )
 

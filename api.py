@@ -63,6 +63,27 @@ class AddMemberResult(ApiResult):
     pass
 
 
+class Chat(BaseModel):
+    id: str
+    title: str
+    photo: str
+    type: str
+    thread_id: Optional[int] = Field(default=None)
+    updated_at: str
+
+
+class UpdateChatPayload(BaseModel):
+    chat_id: int
+    thread_id: Optional[int] = Field(default=None)
+    title: Optional[str] = Field(default=None)
+    photo: Optional[str] = Field(default=None)
+    type: Optional[str] = Field(default=None)
+
+
+class UpdateChatResult(ApiResult):
+    chat: Optional[Chat] = Field(default=None)
+
+
 class Api:
     def __init__(self):
         self.default_headers = {"X-Api-Key": env.API_KEY}
@@ -191,6 +212,52 @@ class Api:
             logger.error(
                 f"[API] PUT chat/{payload.chat_id}/members/{payload.user_id} - Exception: {e}"
             )
+            return e
+
+    async def update_chat(
+        self, payload: UpdateChatPayload
+    ) -> Union[UpdateChatResult, Exception]:
+        try:
+            request_data = {}
+            if payload.thread_id is not None:
+                request_data["threadId"] = payload.thread_id
+            if payload.title is not None:
+                request_data["title"] = payload.title
+            if payload.photo is not None:
+                request_data["photo"] = payload.photo
+            if payload.type is not None:
+                request_data["type"] = payload.type
+
+            async with self.aio_session.patch(
+                f"chat/{payload.chat_id}", json=request_data
+            ) as response:
+                data = await response.json()
+                logger.debug(f"[API] PATCH chat/{payload.chat_id} response: {data}")
+                response.raise_for_status()
+
+                return UpdateChatResult(
+                    chat=Chat(
+                        id=data.get("id"),
+                        title=data.get("title"),
+                        photo=data.get("photo"),
+                        type=data.get("type"),
+                        thread_id=data.get("threadId"),
+                        updated_at=data.get("updatedAt"),
+                    ),
+                    status=response.status,
+                    message="Chat updated successfully",
+                )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(
+                f"[API] PATCH chat/{payload.chat_id} - HTTP {e.status}: {e.message}"
+            )
+            return UpdateChatResult(
+                chat=None,
+                status=e.status,
+                message=f"HTTP {e.status}: {e.message}",
+            )
+        except Exception as e:
+            logger.error(f"[API] PATCH chat/{payload.chat_id} - Exception: {e}")
             return e
 
     async def clean_up(self):
