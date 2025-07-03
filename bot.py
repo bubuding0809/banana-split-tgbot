@@ -121,6 +121,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # * Handle start process for private bot chat
     # * ==========================================
     if update.effective_chat.type == telegram.constants.ChatType.PRIVATE:
+        # Show a loading message while fetching user data
+        asyncio.create_task(
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="⏳ Starting the bot...",
+                message_thread_id=message_thread_id,
+            )
+        )
 
         api: Optional[Api] = context.bot_data.get("api")
         if api is None:
@@ -630,7 +638,6 @@ async def post_init(application: Application):
     common_commands = [
         BotCommand("start", "Start the bot"),
         BotCommand("help", "Find out how to use the bot"),
-        BotCommand("pin", "Pin the expenses mini-app"),
     ]
 
     # Commands for private chats
@@ -645,6 +652,7 @@ async def post_init(application: Application):
     # Commands for group chats
     group_commands = [
         *common_commands,
+        BotCommand("pin", "Pin the expenses mini-app"),
         BotCommand("balance", "View current split balances"),
     ]
     await application.bot.set_my_commands(
