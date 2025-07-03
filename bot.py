@@ -704,26 +704,20 @@ def main():
     application.add_error_handler(error)
 
     # Run the bot in polling mode or webhook mode depending on the environment
-    if env.ENV == "production":
-        # Ensure the TELEGRAM_WEBHOOK_URL is set in the environment variables
-        TELEGRAM_WEBHOOK_URL = os.environ.get("TELEGRAM_WEBHOOK_URL")
-        if TELEGRAM_WEBHOOK_URL is None:
-            logger.error("No TELEGRAM_WEBHOOK_URL set in environment variables.")
-            return
-
+    if env.ENV == "development":
+        # * Run the bot in development mode with polling enabled
+        logger.info("Running in development mode, using polling.")
+        application.run_polling()
+    else:
         # * Run the bot in production mode with webhook enabled
-        logger.info("Running in production mode, with webhook enabled.")
-        logger.info(f"Webhook URL: {TELEGRAM_WEBHOOK_URL}")
+        logger.info(f"Running in {env.ENV} mode, using webhook.")
+        logger.info(f"Webhook URL: {env.TELEGRAM_WEBHOOK_URL}")
         application.run_webhook(
             listen="0.0.0.0",
-            port=int(os.environ.get("PORT", 8443)),
-            secret_token=os.environ.get("TELEGRAM_WEBHOOK_SECRET", "NotSoSecret"),
-            webhook_url=TELEGRAM_WEBHOOK_URL,
+            port=env.PORT,
+            secret_token=env.TELEGRAM_WEBHOOK_SECRET,
+            webhook_url=env.TELEGRAM_WEBHOOK_URL,
         )
-    else:
-        # * Run the bot in development mode with polling enabled
-        logger.info("Running in development mode, with polling enabled.")
-        application.run_polling()
 
 
 if __name__ == "__main__":
