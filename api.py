@@ -65,7 +65,7 @@ class AddMemberResult(ApiResult):
 
 class Api:
     def __init__(self):
-        self.default_headers = {"Authorization": f"Bearer {env.API_KEY}"}
+        self.default_headers = {"X-Api-Key": env.API_KEY}
         self.aio_session = aiohttp.ClientSession(
             base_url=env.API_BASE_URL,
             headers=self.default_headers,
