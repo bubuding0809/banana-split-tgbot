@@ -46,17 +46,17 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 USAGE_GUIDE = """
-1. **Add me to a group chat**: Click the "Add to group" button below or go to your group chat and add me as a member.
+1\\. **Add me to a group chat**: Click the "Add to group" button below or go to your group chat and add me as a member\\.
 
-2. **Start the bot**: Use the `/start@{bot_username}` command in the group chat to kick things off. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there.
+2\\. **Start the bot**: Use the `/start@{bot_username}` command in the group chat to kick things off\\. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there\\.
 
-3. **Get your friends to join**: Have them open the mini-app in the group chat. This will make them available for you to split expenses with.
+3\\. **Get your friends to join**: Have them open the mini-app in the group chat\\. This will make them available for you to split expenses with\\.
 
-🚀 Happy splitting! 🍌🍌🍌
+🚀 Happy splitting\\! 🍌🍌🍌
 """
 
 START_MESSAGE_EXISITING = """
-Welcome back to Banana Splitz, {first_name}! 🌟 We're thrilled to see you again, here is how to use me.
+Welcome back to Banana Splitz, {first_name}\\! 🌟 We're thrilled to see you again, here is how to use me.
 
 {usage_guide}
 """
