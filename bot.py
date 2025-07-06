@@ -50,7 +50,7 @@ USAGE_GUIDE = """
 
 2\\. **Start the bot**: Use the `/start@{bot_username}` command in the group chat to kick things off\\. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there\\.
 
-3\\. **Get your friends to join**: Have them open the mini-app in the group chat\\. This will make them available for you to split expenses with\\.
+3\\. **Get your friends to join**: Have them open the mini\\-app in the group chat\\. This will make them available for you to split expenses with\\.
 
 🚀 Happy splitting\\! 🍌🍌🍌
 """
@@ -64,7 +64,7 @@ Welcome back to Banana Splitz, {first_name}\\! 🌟 We're thrilled to see you ag
 START_MESSAGE_PRIVATE = """
 Welcome to Banana Splitz, {first_name}! 🎉
 
-Say goodbye to awkward bill-splitting and hello to hassle-free group expenses! 
+Say goodbye to awkward bil\\-splitting and hello to hassle\\-free group expenses! 
 
 How to use me?
 {usage_guide}
