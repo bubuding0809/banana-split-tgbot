@@ -45,22 +45,29 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+USAGE_GUIDE = """
+1. **Add me to a group chat**: Click the "Add to group" button below or go to your group chat and add me as a member.
+
+2. **Start the bot**: Use the `/start@{bot_username}` command in the group chat to kick things off. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there.
+
+3. **Get your friends to join**: Have them open the mini-app in the group chat. This will make them available for you to split expenses with.
+
+🚀 Happy splitting! 🍌🍌🍌
+"""
+
 START_MESSAGE_EXISITING = """
-Welcome back to Banana Splitz, {first_name}! 🌟 We're thrilled to see you again. Here's a quick reminder of the great features you can start using right away.
+Welcome back to Banana Splitz, {first_name}! 🌟 We're thrilled to see you again, here is how to use me.
 
-1.  ...
-2.  ...
-
-🚀 Start Splitting!
+{usage_guide}
 """
 
 START_MESSAGE_PRIVATE = """
-Welcome to SplitLeh, {first_name}! 🎉
+Welcome to Banana Splitz, {first_name}! 🎉
 
 Say goodbye to awkward bill-splitting and hello to hassle-free group expenses! 
 
 How to use me?
-🤝 Add me to a group to start 🤝
+{usage_guide}
 """
 START_MESSAGE_GROUP = """
 🍌 Hey there homies 👋
@@ -76,8 +83,7 @@ Forgot how to use the bot? 🤣
 
 Here’s a quick guide to get you started:
 
-1.  ...
-2   ...
+{usage_guide}
 """
 
 ADD_MEMBER_START_MESSAGE = """
@@ -153,7 +159,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE_EXISITING.format(
-                    first_name=update.effective_user.first_name
+                    first_name=update.effective_user.first_name,
+                    usage_guide=USAGE_GUIDE.format(bot_username=context.bot.username),
                 ),
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
@@ -190,7 +197,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=START_MESSAGE_PRIVATE.format(
-                first_name=update.effective_user.first_name
+                first_name=update.effective_user.first_name,
+                usage_guide=USAGE_GUIDE.format(bot_username=context.bot.username),
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
@@ -267,7 +275,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     except telegram.error.BadRequest:
         await pin_message.reply_text(
-            "📌 Pin this for quick access, or make me admin and run /pin@SplitLehBot again to pin automatically"
+            f"📌 Pin this for quick access, or make me admin and run /pin@{context.bot.username} again to pin automatically"
         )
 
 
@@ -301,7 +309,9 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=HELP_MESSAGE,
+        text=HELP_MESSAGE.format(
+            usage_guide=USAGE_GUIDE.format(bot_username=context.bot.username),
+        ),
         message_thread_id=message_thread_id,
     )
 
@@ -348,7 +358,7 @@ async def pin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     except telegram.error.BadRequest:
         await pin_message.reply_text(
-            "📌 Pin this for quick access, or make me admin and run /pin@SplitLehBot again to pin automatically"
+            f"📌 Pin this for quick access, or make me admin and run /pin@{context.bot.username} again to pin automatically"
         )
 
 
