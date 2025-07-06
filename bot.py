@@ -159,8 +159,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE_EXISITING.format(
-                    first_name=update.effective_user.first_name,
-                    usage_guide=USAGE_GUIDE.format(bot_username=context.bot.username),
+                    first_name=helpers.escape_markdown(
+                        update.effective_user.first_name
+                    ),
+                    usage_guide=USAGE_GUIDE.format(
+                        bot_username=helpers.escape_markdown(context.bot.username)
+                    ),
                 ),
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
@@ -171,6 +175,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
                 ),
                 message_thread_id=message_thread_id,
+                parse_mode=ParseMode.MARKDOWN_V2,
             )
 
         # * User does not exist - create user
@@ -197,8 +202,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=START_MESSAGE_PRIVATE.format(
-                first_name=update.effective_user.first_name,
-                usage_guide=USAGE_GUIDE.format(bot_username=context.bot.username),
+                first_name=helpers.escape_markdown(update.effective_user.first_name),
+                usage_guide=USAGE_GUIDE.format(
+                    bot_username=helpers.escape_markdown(context.bot.username)
+                ),
             ),
             reply_markup=InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
@@ -209,6 +216,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             ),
             message_thread_id=message_thread_id,
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
 
     # * Handle start process for group chat
@@ -310,9 +318,12 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=HELP_MESSAGE.format(
-            usage_guide=USAGE_GUIDE.format(bot_username=context.bot.username),
+            usage_guide=USAGE_GUIDE.format(
+                bot_username=helpers.escape_markdown(context.bot.username)
+            ),
         ),
         message_thread_id=message_thread_id,
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
 
 
