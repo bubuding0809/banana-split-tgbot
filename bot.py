@@ -62,9 +62,9 @@ Welcome back to Banana Splitz, {first_name}\\! 🌟 We're thrilled to see you ag
 """
 
 START_MESSAGE_PRIVATE = """
-Welcome to Banana Splitz, {first_name}! 🎉
+Welcome to Banana Splitz, {first_name}\\! 🎉
 
-Say goodbye to awkward bil\\-splitting and hello to hassle\\-free group expenses! 
+Say goodbye to awkward bil\\-splitting and hello to hassle\\-free group expenses\\! 
 
 How to use me?
 {usage_guide}
