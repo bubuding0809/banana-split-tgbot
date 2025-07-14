@@ -256,6 +256,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id,
             text=START_MESSAGE_GROUP,
             message_thread_id=message_thread_id,
+            parse_mode=ParseMode.MARKDOWN_V2,
         )
 
     # * Try to pin the bot for the chat
