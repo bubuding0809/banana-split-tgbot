@@ -75,11 +75,13 @@ How to use me?
 GROUP_JOIN_MESSAGE = """🎉 Hello friends, I am here to help your split your expenses!"""
 
 START_MESSAGE_GROUP = """
-🍌 Hey there homies 👋
+🍌 Hey everyone! 👋
 
-Let me help you guys manage your shared expenses!
+Ready to split expenses effortlessly? I've got you covered!
 
-🤔 First time seeing me? 
+✨ *Everyone needs to open the app below to get registered* ✨
+>Just tap the `Expenses` button → new users will be redirected to the bot to get started\\!
+
 ⬇️ Get started with the app ⬇️
 """
 
