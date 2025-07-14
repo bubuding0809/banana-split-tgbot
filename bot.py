@@ -79,8 +79,12 @@ START_MESSAGE_GROUP = """
 
 Ready to split expenses effortlessly? I've got you covered\\!
 
-✨ *Everyone needs to open the app below to get registered* ✨
->Just tap the `Expenses` button → new users will be redirected to the bot to get started\\!
+✨ *Open the app to get registered* ✨
+>Just tap the `Banana Splitz` button
+>⋅new users will be redirected to the bot to get started
+>⋅existing users will to be registered to the group
+>⋅you can only split expenses with registered users
+
 
 ⬇️ Get started with the app ⬇️
 """
