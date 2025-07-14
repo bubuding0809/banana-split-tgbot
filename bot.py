@@ -75,7 +75,7 @@ How to use me?
 GROUP_JOIN_MESSAGE = """🎉 Hello friends, I am here to help your split your expenses!"""
 
 START_MESSAGE_GROUP = """
-🍌 Hey everyone! 👋
+👋 Hey everyone\\!
 
 Ready to split expenses effortlessly? I've got you covered\\!
 
