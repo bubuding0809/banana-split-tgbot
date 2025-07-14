@@ -46,11 +46,11 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 USAGE_GUIDE = """
-1\\. **Add me to a group chat**: Click the "Add to group" button below or go to your group chat and add me as a member\\.
+1\\. *Add me to a group chat*: Click the "Add to group" button below or go to your group chat and add me as a member\\.
 
-2\\. **Start the bot**: Use the `/start@{bot_username}` command in the group chat to kick things off\\. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there\\.
+2\\. *Start the bot*: Use the `/start@{bot_username}` command in the group chat to kick things off\\. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there\\.
 
-3\\. **Get your friends to join**: Have them open the mini\\-app in the group chat\\. This will make them available for you to split expenses with\\.
+3\\. *Get your friends to join*: Have them open the mini\\-app in the group chat\\. This will make them available for you to split expenses with\\.
 
 🚀 Happy splitting\\! 🍌🍌🍌
 """
@@ -61,6 +61,8 @@ Welcome back to Banana Splitz, {first_name}\\! 🌟 We're thrilled to see you ag
 {usage_guide}
 """
 
+START_LOADER_MESSAGE = """⏳ Starting the bot..."""
+
 START_MESSAGE_PRIVATE = """
 Welcome to Banana Splitz, {first_name}\\! 🎉
 
@@ -69,6 +71,9 @@ Say goodbye to awkward bil\\-splitting and hello to hassle\\-free group expenses
 How to use me?
 {usage_guide}
 """
+
+GROUP_JOIN_MESSAGE = """🎉 Hello friends, I am here to help your split your expenses!"""
+
 START_MESSAGE_GROUP = """
 🍌 Hey there homies 👋
 
@@ -136,7 +141,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         asyncio.create_task(
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text="⏳ Starting the bot...",
+                text=START_LOADER_MESSAGE,
                 message_thread_id=message_thread_id,
             )
         )
@@ -611,7 +616,7 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     logger.info(f"Chat created: {api_result.message}")
     await update.message.reply_text(
-        text="🎉 Hello friends, I am here to help your split your expenses!",
+        text=GROUP_JOIN_MESSAGE,
         message_thread_id=message_thread_id,
     )
 
