@@ -61,6 +61,16 @@ Welcome back to Banana Splitz, {first_name}\\! 🌟 We're thrilled to see you ag
 {usage_guide}
 """
 
+START_MESSAGE_GROUP_REGISTER = """
+🎉 You are all set!
+
+Learn more about me using /help
+
+or
+
+◀︎ Return to the app by swiping back
+"""
+
 START_LOADER_MESSAGE = """⏳ Starting the bot..."""
 
 START_MESSAGE_PRIVATE = """
@@ -140,6 +150,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if api is None:
         return logger.error("[start]: Api instance not found in bot_data")
 
+    start_command_arg = context.args[0] if context.args else None
+    start_key, start_value = (
+        start_command_arg.split(":") if start_command_arg is not None else [None, None]
+    )
+
     # * Handle start process for private bot chat
     # * ==========================================
     if update.effective_chat.type == telegram.constants.ChatType.PRIVATE:
@@ -167,6 +182,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # * User exists - send welcome back message
         if get_user_result.user is not None:
             logger.info(f"[start] - api.get_user: User exists: {get_user_result.user}")
+
+            if start_key == "register":
+                return await context.bot.send_message(
+                    chat_id=update.effective_chat.id, text=START_MESSAGE_GROUP_REGISTER
+                )
+
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id,
                 text=START_MESSAGE_EXISITING.format(
@@ -208,6 +229,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             logger.info(
                 f"[start] - api.create_user: User created: {api_result.message}"
+            )
+
+        if start_key == "register":
+            return await context.bot.send_message(
+                chat_id=update.effective_chat.id, text=START_MESSAGE_GROUP_REGISTER
             )
 
         await context.bot.send_message(
@@ -265,7 +291,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # * Try to pin the bot for the chat
     # * ===============================
-
     if env.MINI_APP_DEEPLINK is None:
         logger.error("[pin]: MINI_APP_DEEPLINK was not set, unable to send pin message")
 
