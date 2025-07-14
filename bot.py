@@ -77,7 +77,7 @@ GROUP_JOIN_MESSAGE = """🎉 Hello friends, I am here to help your split your ex
 START_MESSAGE_GROUP = """
 🍌 Hey everyone! 👋
 
-Ready to split expenses effortlessly? I've got you covered!
+Ready to split expenses effortlessly? I've got you covered\\!
 
 ✨ *Everyone needs to open the app below to get registered* ✨
 >Just tap the `Expenses` button → new users will be redirected to the bot to get started\\!
