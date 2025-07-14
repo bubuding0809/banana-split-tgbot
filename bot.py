@@ -151,9 +151,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return logger.error("[start]: Api instance not found in bot_data")
 
     start_command_arg = context.args[0] if context.args else None
-    start_key, start_value = (
-        start_command_arg.split(":") if start_command_arg is not None else [None, None]
-    )
 
     # * Handle start process for private bot chat
     # * ==========================================
@@ -183,7 +180,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if get_user_result.user is not None:
             logger.info(f"[start] - api.get_user: User exists: {get_user_result.user}")
 
-            if start_key == "register":
+            if start_command_arg == "register":
                 return await context.bot.send_message(
                     chat_id=update.effective_chat.id, text=START_MESSAGE_GROUP_REGISTER
                 )
@@ -231,7 +228,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"[start] - api.create_user: User created: {api_result.message}"
             )
 
-        if start_key == "register":
+        if start_command_arg == "register":
             return await context.bot.send_message(
                 chat_id=update.effective_chat.id, text=START_MESSAGE_GROUP_REGISTER
             )
