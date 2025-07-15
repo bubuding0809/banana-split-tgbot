@@ -57,7 +57,6 @@ USAGE_GUIDE = """
 
 START_MESSAGE_EXISITING = """
 Welcome back to Banana Splitz, {first_name}\\! 🌟 We're thrilled to see you again, here is how to use me\\.
-
 {usage_guide}
 """
 
@@ -103,7 +102,6 @@ HELP_MESSAGE = """
 Forgot how to use the bot? 🤣
 
 Here’s a quick guide to get you started:
-
 {usage_guide}
 """
 
