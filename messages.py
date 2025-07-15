@@ -61,7 +61,6 @@ Ready to split expenses effortlessly? I've got you covered\\!
 >⋅Existing users will to be registered to the group
 >⋅Expenses can only be split with users who have been registered to the group
 
-
 ⬇️ Get started with the app ⬇️
 """
 
