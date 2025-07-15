@@ -149,6 +149,7 @@ class BotConfiguration:
         common_commands = [
             BotCommand("start", "Start the bot"),
             BotCommand("help", "Find out how to use the bot"),
+            BotCommand("pin", "Pin the expenses mini-app"),
         ]
         
         # Commands for private chats
@@ -163,8 +164,6 @@ class BotConfiguration:
         # Commands for group chats
         group_commands = [
             *common_commands,
-            BotCommand("pin", "Pin the expenses mini-app"),
-            BotCommand("balance", "View current split balances"),
             BotCommand("set_topic", "Set the topic for bot notifications"),
         ]
         await application.bot.set_my_commands(
