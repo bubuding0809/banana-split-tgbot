@@ -3,7 +3,7 @@ Message formatting and utility functions for the Banana Split Telegram bot.
 """
 
 import logging
-from typing import List, Optional
+from typing import List, Literal, Optional
 from telegram import helpers
 from telegram.constants import ParseMode
 
@@ -14,7 +14,7 @@ class MessageUtils:
     """Utility class for message formatting and processing."""
     
     @staticmethod
-    def escape_markdown(text: str, version: int = 2) -> str:
+    def escape_markdown(text: str, version: Literal[1, 2] = 2) -> str:
         """
         Escape markdown characters in text.
         
@@ -28,7 +28,7 @@ class MessageUtils:
         return helpers.escape_markdown(text, version=version)
     
     @staticmethod
-    def mention_markdown(user_id: int, name: str, version: int = 2) -> str:
+    def mention_markdown(user_id: int, name: str, version: Literal[1, 2] = 2) -> str:
         """
         Create a markdown mention for a user.
         
@@ -137,9 +137,9 @@ class MessageUtils:
             Formatted instruction message
         """
         if is_forum:
-            return f"Use `/start@{MessageUtils.escape_markdown(bot_username)}` in your desired 💬 topic to start using me\\!"
+            return f"Use `/start@{MessageUtils.escape_markdown(bot_username)}` in your desired 💬 topic to start me\\!"
         else:
-            return MessageUtils.escape_markdown(f"Use /start@{bot_username} to start using me!")
+            return f"Use /start@{bot_username} to start me!"
     
     @staticmethod
     def format_template_message(template: str, **kwargs) -> str:

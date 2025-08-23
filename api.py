@@ -84,6 +84,16 @@ class UpdateChatResult(ApiResult):
     chat: Optional[Chat] = Field(default=None)
 
 
+class SendGroupReminderPayload(BaseModel):
+    chat_id: int
+
+
+class SendGroupReminderResult(ApiResult):
+    message_id: Optional[int] = Field(default=None)
+    timestamp: str
+    reason: Optional[str] = Field(default=None)
+
+
 class Api:
     def __init__(self):
         self.default_headers = {"X-Api-Key": env.API_KEY}
@@ -258,6 +268,40 @@ class Api:
             )
         except Exception as e:
             logger.error(f"[API] PATCH chat/{payload.chat_id} - Exception: {e}")
+            return e
+
+    async def send_group_reminder(
+        self, payload: SendGroupReminderPayload
+    ) -> Union[SendGroupReminderResult, Exception]:
+        try:
+            request_data = {"chatId": str(payload.chat_id)}
+            async with self.aio_session.post(
+                "telegram/group-reminder/send", json=request_data
+            ) as response:
+                data = await response.json()
+                logger.debug(f"[API] POST telegram/group-reminder/send response: {data}")
+                response.raise_for_status()
+
+                return SendGroupReminderResult(
+                    status=response.status,
+                    message="Group reminder sent successfully",
+                    message_id=data.get("messageId"),
+                    timestamp=data.get("timestamp"),
+                    reason=data.get("reason"),
+                )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(
+                f"[API] POST telegram/group-reminder/send - HTTP {e.status}: {e.message}"
+            )
+            return SendGroupReminderResult(
+                status=e.status,
+                message=f"HTTP {e.status}: {e.message}",
+                message_id=None,
+                timestamp="",
+                reason=f"HTTP error: {e.message}",
+            )
+        except Exception as e:
+            logger.error(f"[API] POST telegram/group-reminder/send - Exception: {e}")
             return e
 
     async def clean_up(self):

@@ -12,7 +12,7 @@ import telegram
 from .base_handler import BaseHandler
 from messages import BotMessages
 from utils import ChatUtils, KeyboardUtils, MessageUtils
-from api import CreateChatPayload, UpdateChatPayload
+from api import CreateChatPayload, UpdateChatPayload, SendGroupReminderPayload
 from env import env
 
 
@@ -41,16 +41,38 @@ class GroupCommandHandler(BaseHandler):
             asyncio.create_task(
                 self._update_chat_thread(update, context, message_thread_id)
             )
+
+        # Create mini-app URL
+        chat_context = ChatUtils.create_chat_context(
+            update.effective_chat.id, 
+            update.effective_chat.type
+        )
         
-        await context.bot.send_message(
+        url = ChatUtils.create_mini_app_url(
+            env.MINI_APP_DEEPLINK,
+            context.bot.username,
+            chat_context,
+            "compact"
+        )
+        
+        keyboard = KeyboardUtils.create_mini_app_keyboard("🍌 Banana Splitz", url)
+        
+        pin_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=BotMessages.START_MESSAGE_GROUP,
             message_thread_id=message_thread_id,
             parse_mode=ParseMode.MARKDOWN_V2,
+            reply_markup=keyboard
         )
-        
-        # Send pinned message with mini-app
-        await self._send_pinned_mini_app(update, context, message_thread_id)
+
+        # Try to pin the message
+        try:
+            await context.bot.pin_chat_message(
+                chat_id=update.effective_chat.id, 
+                message_id=pin_message.id
+            )
+        except telegram.error.BadRequest:
+            pass  # Ignore if pinning fails, likely due to permissions
     
     async def _update_chat_thread(
         self, 
@@ -77,55 +99,7 @@ class GroupCommandHandler(BaseHandler):
                 text=BotMessages.SUCCESS_TOPIC_DETECTED,
                 message_thread_id=thread_id,
             )
-    
-    async def _send_pinned_mini_app(
-        self, 
-        update: Update, 
-        context: ContextTypes.DEFAULT_TYPE,
-        message_thread_id: Optional[int]
-    ):
-        """Send the mini-app message and attempt to pin it."""
-        # Type assertion: called after validation
-        assert update.effective_chat is not None
-        if not self.check_mini_app_config():
-            self.logger.error("Unable to send pin message")
-            return
-        
-        # Create mini-app URL
-        chat_context = ChatUtils.create_chat_context(
-            update.effective_chat.id, 
-            update.effective_chat.type
-        )
-        
-        url = ChatUtils.create_mini_app_url(
-            env.MINI_APP_DEEPLINK,
-            context.bot.username,
-            chat_context,
-            "compact"
-        )
-        
-        keyboard = KeyboardUtils.create_mini_app_keyboard("Banana Splitz", url)
-        
-        pin_message = await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=BotMessages.PIN_START_MESSAGE,
-            reply_markup=keyboard,
-            message_thread_id=message_thread_id,
-        )
-        
-        # Try to pin the message
-        try:
-            await context.bot.pin_chat_message(
-                chat_id=update.effective_chat.id, 
-                message_id=pin_message.id
-            )
-        except telegram.error.BadRequest:
-            await pin_message.reply_text(
-                BotMessages.PIN_MANUAL_INSTRUCTION.format(
-                    bot_username=context.bot.username
-                )
-            )
-    
+
     async def pin(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Handle /pin command to pin the mini-app message.
@@ -160,7 +134,7 @@ class GroupCommandHandler(BaseHandler):
             "compact"
         )
         
-        keyboard = KeyboardUtils.create_mini_app_keyboard("Banana Splitz", url)
+        keyboard = KeyboardUtils.create_mini_app_keyboard("🍌 Banana Splitz", url)
         
         pin_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -270,6 +244,56 @@ class GroupCommandHandler(BaseHandler):
             update, context, BotMessages.SUCCESS_TOPIC_SET, message_thread_id
         )
     
+    async def summary(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Handle /summary command to show debt summary.
+        
+        Args:
+            update: Telegram update object
+            context: Bot context
+        """
+        if not self.validate_update(update):
+            return
+        
+        # Type assertion: validate_update ensures this is not None
+        assert update.effective_chat is not None
+        
+        # Only allow in group chats
+        if self.is_private_chat(update):
+            return await self.send_error_message(
+                update, context, BotMessages.ERROR_SUMMARY_GROUP_ONLY, None
+            )
+        
+        message_thread_id = self.get_message_thread_id(update)
+        
+        await self.send_typing_action(update, context)
+        
+        api = self.get_api_instance(context)
+        if api is None:
+            return await self.send_error_message(
+                update, context, BotMessages.ERROR_API_NOT_FOUND, message_thread_id
+            )
+        
+        # Call the API to send group reminder
+        payload = SendGroupReminderPayload(chat_id=update.effective_chat.id)
+        api_result = await api.send_group_reminder(payload)
+        
+        if isinstance(api_result, Exception):
+            self.logger.error(f"api.send_group_reminder error: {api_result}")
+            return await self.send_error_message(
+                update, context, BotMessages.ERROR_SUMMARY_FAILED, message_thread_id
+            )
+        
+        # Handle different response scenarios
+        if api_result.message_id is None:
+            # No message was sent, show the reason
+            reason_message = BotMessages.SUMMARY_NO_MESSAGE.format(
+                reason=api_result.reason or "Unknown reason"
+            )
+            await self.send_success_message(
+                update, context, reason_message, message_thread_id
+            )
+    
     async def bot_added(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Handle bot being added to a group.
@@ -370,8 +394,8 @@ class GroupCommandHandler(BaseHandler):
         # Type assertion: called after validation
         assert update.effective_chat is not None
         instruction_text = MessageUtils.format_group_instruction(
-            context.bot.username,
-            ChatUtils.is_forum_chat(update.effective_chat)
+                context.bot.username,
+                ChatUtils.is_forum_chat(update.effective_chat)
         )
         
         parse_mode = ParseMode.MARKDOWN_V2 if ChatUtils.is_forum_chat(update.effective_chat) else None

@@ -52,16 +52,9 @@ or
 
     # Start Messages - Group Chat
     START_MESSAGE_GROUP = """
-👋 Hey everyone\\!
+Let's split expenses together\\!
 
-Ready to split expenses effortlessly? I've got you covered\\!
-
-*🔘 Tap `[Banana Splitz] to get registered`*
->⋅New users will be redirected to the bot to get started
->⋅Existing users will to be registered to the group
->⋅Expenses can only be split with users who have been registered to the group
-
-⬇️ Get started with the app ⬇️
+*👇 Everyone, open the app to get started*
 """
 
     GROUP_JOIN_MESSAGE = """🎉 Hello friends, I am here to help your split your expenses!"""
@@ -98,12 +91,17 @@ No worries, you can help them join by sharing their contact with me\\!
     ERROR_TOPIC_ONLY = "⚠️ This command can only be used in a topic."
     ERROR_MESSAGE_SEND_BLOCKED = "⚠️ Failed to send message to {username} as it was blocked."
     ERROR_MESSAGE_SEND_NO_CONVERSATION = "⚠️ Failed to send message to {username} as they do not have conversation yet."
+    ERROR_SUMMARY_GROUP_ONLY = "⚠️ The 'summary' command can only be used in group chats."
+    ERROR_SUMMARY_FAILED = "⚠️ Failed to generate summary. Please try again later."
 
     # Success Messages
     SUCCESS_TOPIC_SET = "✅ Topic set successfully! I will now use this topic for all messages."
     SUCCESS_TOPIC_DETECTED = "💬 Topic detected, I will now use this topic for all messages."
     SUCCESS_CHASE_SENT = "✅ Successfully reminded {username} to pay up!"
     SUCCESS_OPERATION_CANCELLED = "Current operation cancelled."
+    
+    # Summary Messages
+    SUMMARY_NO_MESSAGE = "ℹ️ {reason}"
 
     # Pin and Balance Messages
     PIN_MESSAGE = "🤑 Split your expense leh 🤑"
@@ -119,8 +117,8 @@ No worries, you can help them join by sharing their contact with me\\!
     CHASE_CHOOSE_USER_BUTTON = "Choose user"
 
     # Bot Instruction Messages for Groups
-    GROUP_TOPIC_INSTRUCTION = "Use `/start@{bot_username}` in your desired 💬 topic to start using me\\!"
-    GROUP_START_INSTRUCTION = "Use /start@{bot_username} to start using me!"
+    GROUP_TOPIC_INSTRUCTION = "Use `/start@{bot_username}` in your desired 💬 topic to start me\\!"
+    GROUP_START_INSTRUCTION = "Use `/start@{bot_username}` to start me\\!"
 
     # Member Management UI
     ADD_MEMBER_SELECT_BUTTON = "Select Users 🧑‍🧒‍🧒"

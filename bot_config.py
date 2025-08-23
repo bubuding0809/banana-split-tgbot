@@ -63,6 +63,7 @@ class BotConfiguration:
         chase_handler = CommandHandler("chase", self.member_handler.chase)
         set_topic_handler = CommandHandler("set_topic", self.group_handler.set_topic)
         balance_handler = CommandHandler("balance", self.group_handler.balance)
+        summary_handler = CommandHandler("summary", self.group_handler.summary)
         
         # Message handlers
         user_shared_handler = MessageHandler(
@@ -83,6 +84,7 @@ class BotConfiguration:
         application.add_handler(help_handler)
         application.add_handler(pin_handler)
         application.add_handler(balance_handler)
+        application.add_handler(summary_handler)
         application.add_handler(chase_handler)
         application.add_handler(set_topic_handler)
         application.add_handler(user_shared_handler)
@@ -164,6 +166,7 @@ class BotConfiguration:
         # Commands for group chats
         group_commands = [
             *common_commands,
+            BotCommand("summary", "Show debt summary for the group"),
             BotCommand("set_topic", "Set the topic for bot notifications"),
         ]
         await application.bot.set_my_commands(
