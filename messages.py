@@ -102,6 +102,7 @@ No worries, you can help them join by sharing their contact with me\\!
     
     # Summary Messages
     SUMMARY_NO_MESSAGE = "💬 {reason}"
+    SUMMARY_IN_PROGRESS = "⏳ Generating summary ..."
 
     # Pin and Balance Messages
     PIN_MESSAGE = "🤑 Split your expense leh 🤑"

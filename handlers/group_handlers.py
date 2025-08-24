@@ -267,6 +267,12 @@ class GroupCommandHandler(BaseHandler):
         message_thread_id = self.get_message_thread_id(update)
         
         await self.send_typing_action(update, context)
+
+        progress_message = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=BotMessages.SUMMARY_IN_PROGRESS,
+            message_thread_id=message_thread_id,
+        )
         
         api = self.get_api_instance(context)
         if api is None:
@@ -277,6 +283,15 @@ class GroupCommandHandler(BaseHandler):
         # Call the API to send group reminder
         payload = SendGroupReminderPayload(chat_id=update.effective_chat.id)
         api_result = await api.send_group_reminder(payload)
+
+        # Delete the progress message
+        try:
+            await context.bot.delete_message(
+                chat_id=update.effective_chat.id,
+                message_id=progress_message.id,
+            )
+        except telegram.error.BadRequest:
+            pass
         
         if isinstance(api_result, Exception):
             self.logger.error(f"api.send_group_reminder error: {api_result}")
