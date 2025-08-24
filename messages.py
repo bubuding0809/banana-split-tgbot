@@ -101,7 +101,7 @@ No worries, you can help them join by sharing their contact with me\\!
     SUCCESS_OPERATION_CANCELLED = "Current operation cancelled."
     
     # Summary Messages
-    SUMMARY_NO_MESSAGE = "ℹ️ {reason}"
+    SUMMARY_NO_MESSAGE = "💬 {reason}"
 
     # Pin and Balance Messages
     PIN_MESSAGE = "🤑 Split your expense leh 🤑"
