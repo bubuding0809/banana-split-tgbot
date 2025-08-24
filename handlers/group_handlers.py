@@ -265,8 +265,6 @@ class GroupCommandHandler(BaseHandler):
             )
         
         message_thread_id = self.get_message_thread_id(update)
-        
-        await self.send_typing_action(update, context)
 
         progress_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
