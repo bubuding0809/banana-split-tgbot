@@ -12,7 +12,12 @@ import telegram
 from .base_handler import BaseHandler
 from messages import BotMessages
 from utils import ChatUtils, KeyboardUtils, MessageUtils
-from api import CreateChatPayload, UpdateChatPayload, SendGroupReminderPayload, MigrateChatPayload
+from api import (
+    CreateChatPayload,
+    UpdateChatPayload,
+    SendGroupReminderPayload,
+    MigrateChatPayload,
+)
 from env import env
 
 
@@ -417,7 +422,9 @@ class GroupCommandHandler(BaseHandler):
             parse_mode=parse_mode,
         )
 
-    async def chat_id_migrated(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def chat_id_migrated(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
         """
         Handle chat ID migration when a group is upgraded to a supergroup.
 
@@ -438,20 +445,20 @@ class GroupCommandHandler(BaseHandler):
         migrate_from_chat_id = update.message.migrate_from_chat_id
         migrate_to_chat_id = update.message.migrate_to_chat_id
 
-        # Determine old and new chat IDs based on available migration data
+        # Only process migration from the old group (when migrate_to_chat_id is present)
+        # This prevents duplicate processing since Telegram sends two migration messages
         if migrate_to_chat_id is not None:
-            # Current chat is being migrated to a supergroup
+            # Current chat is being migrated to a supergroup - PROCESS THIS
             old_chat_id = update.effective_chat.id
             new_chat_id = migrate_to_chat_id
+            self.logger.info(f"Processing migration from old group: {old_chat_id} -> {new_chat_id}")
         elif migrate_from_chat_id is not None:
-            # Current chat is the result of migration from a group
-            old_chat_id = migrate_from_chat_id
-            new_chat_id = update.effective_chat.id
+            # Current chat is the result of migration from a group - SKIP THIS
+            self.logger.info(f"Received supergroup migration message (from {migrate_from_chat_id}), skipping to avoid duplicate processing")
+            return
         else:
             self.logger.warning("Migration update received but no migration IDs found")
             return
-
-        self.logger.info(f"Chat migration detected: {old_chat_id} -> {new_chat_id}")
 
         api = self.get_api_instance(context)
         if api is None:
@@ -459,30 +466,26 @@ class GroupCommandHandler(BaseHandler):
             return
 
         # Call API to handle the migration
-        payload = MigrateChatPayload(
-            old_chat_id=old_chat_id,
-            new_chat_id=new_chat_id
-        )
+        payload = MigrateChatPayload(old_chat_id=old_chat_id, new_chat_id=new_chat_id)
 
         api_result = await api.migrate_chat(payload)
 
         if isinstance(api_result, Exception):
             self.logger.error(f"api.migrate_chat error: {api_result}")
         else:
-            self.logger.info(f"Chat migration completed successfully: {api_result.message}")
-            
+            self.logger.info(
+                f"Chat migration completed successfully: {api_result.message}"
+            )
+
             # Send migration notification with new link
             await self._send_migration_notification(update, context, new_chat_id)
 
     async def _send_migration_notification(
-        self, 
-        update: Update, 
-        context: ContextTypes.DEFAULT_TYPE, 
-        new_chat_id: int
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE, new_chat_id: int
     ):
         """
         Send migration notification message with new working link.
-        
+
         Args:
             update: Telegram update object
             context: Bot context
@@ -490,28 +493,30 @@ class GroupCommandHandler(BaseHandler):
         """
         # Type assertion: called after validation
         assert update.effective_chat is not None
-        
+
         # Check mini-app configuration
         if not self.check_mini_app_config():
-            self.logger.warning("Mini-app config not available, skipping migration notification")
+            self.logger.warning(
+                "Mini-app config not available, skipping migration notification"
+            )
             return
-        
+
         try:
             message_thread_id = self.get_message_thread_id(update)
-            
+
             # Create chat context using the NEW chat ID
             chat_context = ChatUtils.create_chat_context(
                 new_chat_id, update.effective_chat.type
             )
-            
+
             # Create mini-app URL with new chat context
             url = ChatUtils.create_mini_app_url(
                 env.MINI_APP_DEEPLINK, context.bot.username, chat_context, "compact"
             )
-            
+
             # Create keyboard with new link
             keyboard = KeyboardUtils.create_mini_app_keyboard("🍌 Banana Splitz", url)
-            
+
             # Send migration notification message
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,
@@ -520,9 +525,11 @@ class GroupCommandHandler(BaseHandler):
                 parse_mode=ParseMode.MARKDOWN_V2,
                 reply_markup=keyboard,
             )
-            
-            self.logger.info(f"Migration notification sent successfully to chat {update.effective_chat.id}")
-            
+
+            self.logger.info(
+                f"Migration notification sent successfully to chat {update.effective_chat.id}"
+            )
+
         except Exception as e:
             self.logger.error(f"Failed to send migration notification: {e}")
             # Don't re-raise - we don't want messaging failure to break migration
