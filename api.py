@@ -94,6 +94,15 @@ class SendGroupReminderResult(ApiResult):
     reason: Optional[str] = Field(default=None)
 
 
+class MigrateChatPayload(BaseModel):
+    old_chat_id: int
+    new_chat_id: int
+
+
+class MigrateChatResult(ApiResult):
+    pass
+
+
 class Api:
     def __init__(self):
         self.default_headers = {"X-Api-Key": env.API_KEY}
@@ -302,6 +311,36 @@ class Api:
             )
         except Exception as e:
             logger.error(f"[API] POST telegram/group-reminder/send - Exception: {e}")
+            return e
+
+    async def migrate_chat(
+        self, payload: MigrateChatPayload
+    ) -> Union[MigrateChatResult, Exception]:
+        try:
+            request_data = {
+                "oldChatId": payload.old_chat_id,
+                "newChatId": payload.new_chat_id,
+            }
+            async with self.aio_session.patch(
+                f"chat/{payload.old_chat_id}/migrate", json=request_data
+            ) as response:
+                data = await response.json()
+                logger.debug(f"[API] PATCH chat/{payload.old_chat_id}/migrate response: {data}")
+                response.raise_for_status()
+
+                return MigrateChatResult(
+                    status=response.status,
+                    message="Chat migrated successfully",
+                )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(
+                f"[API] PATCH chat/{payload.old_chat_id}/migrate - HTTP {e.status}: {e.message}"
+            )
+            return MigrateChatResult(
+                status=e.status, message=f"HTTP {e.status}: {e.message}"
+            )
+        except Exception as e:
+            logger.error(f"[API] PATCH chat/{payload.old_chat_id}/migrate - Exception: {e}")
             return e
 
     async def clean_up(self):

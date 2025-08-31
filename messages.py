@@ -2,9 +2,10 @@
 Message templates and constants for the Banana Split Telegram bot.
 """
 
+
 class BotMessages:
     """Container for all bot message templates and constants."""
-    
+
     # Usage and Help Messages
     USAGE_GUIDE = """
 1\\. *Add me to a group chat*: Click the "Add to group" button below or go to your group chat and add me as a member\\.
@@ -57,7 +58,17 @@ Let's split expenses together\\!
 *👇 Everyone, open the app to get started*
 """
 
-    GROUP_JOIN_MESSAGE = """🎉 Hello friends, I am here to help your split your expenses!"""
+    GROUP_JOIN_MESSAGE = (
+        """🎉 Hello friends, I am here to help your split your expenses!"""
+    )
+
+    MIGRATION_MESSAGE_GROUP = """
+🔄 *Group Upgraded\\!*
+
+This group has been upgraded to a supergroup\\. The old app button no longer works\\.
+
+*👇 Use this button to access Banana Splitz*
+"""
 
     # Member Management Messages
     ADD_MEMBER_START_MESSAGE = """
@@ -81,25 +92,39 @@ No worries, you can help them join by sharing their contact with me\\!
 """
 
     # Error and Status Messages
-    ERROR_API_NOT_FOUND = "⚠️ Something went wrong, API instance not found. Please try again."
+    ERROR_API_NOT_FOUND = (
+        "⚠️ Something went wrong, API instance not found. Please try again."
+    )
     ERROR_USER_CHECK_FAILED = "⚠️ Something went wrong checking user, please try again."
     ERROR_USER_CREATE_FAILED = "⚠️ Something went wrong creating user, please try again."
     ERROR_CHAT_INIT_FAILED = "⚠️ Failed to properly initialize the chat. Please try again by removing and re-adding the bot."
     ERROR_TOPIC_SET_FAILED = "⚠️ Failed to set topic. Please try again later."
     ERROR_MINI_APP_CONFIG = "Something went wrong, please try again."
-    ERROR_CHASE_PRIVATE_ONLY = "⚠️ The 'chase' command is only available in your private chat with the bot"
+    ERROR_CHASE_PRIVATE_ONLY = (
+        "⚠️ The 'chase' command is only available in your private chat with the bot"
+    )
     ERROR_TOPIC_ONLY = "⚠️ This command can only be used in a topic."
-    ERROR_MESSAGE_SEND_BLOCKED = "⚠️ Failed to send message to {username} as it was blocked."
-    ERROR_MESSAGE_SEND_NO_CONVERSATION = "⚠️ Failed to send message to {username} as they do not have conversation yet."
-    ERROR_SUMMARY_GROUP_ONLY = "⚠️ The 'summary' command can only be used in group chats."
+    ERROR_MESSAGE_SEND_BLOCKED = (
+        "⚠️ Failed to send message to {username} as it was blocked."
+    )
+    ERROR_MESSAGE_SEND_NO_CONVERSATION = (
+        "⚠️ Failed to send message to {username} as they do not have conversation yet."
+    )
+    ERROR_SUMMARY_GROUP_ONLY = (
+        "⚠️ The 'summary' command can only be used in group chats."
+    )
     ERROR_SUMMARY_FAILED = "⚠️ Failed to generate summary. Please try again later."
 
     # Success Messages
-    SUCCESS_TOPIC_SET = "✅ Topic set successfully! I will now use this topic for all messages."
-    SUCCESS_TOPIC_DETECTED = "💬 Topic detected, I will now use this topic for all messages."
+    SUCCESS_TOPIC_SET = (
+        "✅ Topic set successfully! I will now use this topic for all messages."
+    )
+    SUCCESS_TOPIC_DETECTED = (
+        "💬 Topic detected, I will now use this topic for all messages."
+    )
     SUCCESS_CHASE_SENT = "✅ Successfully reminded {username} to pay up!"
     SUCCESS_OPERATION_CANCELLED = "Current operation cancelled."
-    
+
     # Summary Messages
     SUMMARY_NO_MESSAGE = "💬 {reason}"
     SUMMARY_IN_PROGRESS = "⏳ Generating summary ..."
@@ -108,7 +133,7 @@ No worries, you can help them join by sharing their contact with me\\!
     PIN_MESSAGE = "🤑 Split your expense leh 🤑"
     PIN_START_MESSAGE = "Start splitting 🍌🍌🍌"
     PIN_MANUAL_INSTRUCTION = "📌 Pin this for quick access, or make me admin and run /pin@{bot_username} again to pin automatically"
-    
+
     BALANCE_HEADER = "*Current Balances*:"
     BALANCE_USER_TEMPLATE = "🔵 *{user_mention}* • [🧾𝔹𝕣𝕖𝕒𝕜𝕕𝕠𝕨𝕟🧾]({deep_link_url})\n> Owes Bubu $10\n> Owes Shawnn $20\n"
 
@@ -118,23 +143,26 @@ No worries, you can help them join by sharing their contact with me\\!
     CHASE_CHOOSE_USER_BUTTON = "Choose user"
 
     # Bot Instruction Messages for Groups
-    GROUP_TOPIC_INSTRUCTION = "Use `/start@{bot_username}` in your desired 💬 topic to start me\\!"
+    GROUP_TOPIC_INSTRUCTION = (
+        "Use `/start@{bot_username}` in your desired 💬 topic to start me\\!"
+    )
     GROUP_START_INSTRUCTION = "Use `/start@{bot_username}` to start me\\!"
 
     # Member Management UI
     ADD_MEMBER_SELECT_BUTTON = "Select Users 🧑‍🧒‍🧒"
     ADD_MEMBER_CANCEL_BUTTON = "/cancel"
 
+
 class Constants:
     """Container for bot constants and configuration values."""
-    
+
     # Request IDs for user sharing
     CHASE_USER_REQUEST = 0
     ADD_MEMBER_REQUEST = 1
-    
+
     # Commands
     ADD_MEMBER_COMMAND = "ADD_MEMBER"
-    
+
     # Response templates for member management
     MEMBER_LIST_SUCCESS_TEMPLATE = "> {name}"
     MEMBER_LIST_FAILED_TEMPLATE = "> {name}"
