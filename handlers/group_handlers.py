@@ -451,10 +451,14 @@ class GroupCommandHandler(BaseHandler):
             # Current chat is being migrated to a supergroup - PROCESS THIS
             old_chat_id = update.effective_chat.id
             new_chat_id = migrate_to_chat_id
-            self.logger.info(f"Processing migration from old group: {old_chat_id} -> {new_chat_id}")
+            self.logger.info(
+                f"Processing migration from old group: {old_chat_id} -> {new_chat_id}"
+            )
         elif migrate_from_chat_id is not None:
             # Current chat is the result of migration from a group - SKIP THIS
-            self.logger.info(f"Received supergroup migration message (from {migrate_from_chat_id}), skipping to avoid duplicate processing")
+            self.logger.info(
+                f"Received supergroup migration message (from {migrate_from_chat_id}), skipping to avoid duplicate processing"
+            )
             return
         else:
             self.logger.warning("Migration update received but no migration IDs found")
@@ -519,7 +523,7 @@ class GroupCommandHandler(BaseHandler):
 
             # Send migration notification message
             await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+                chat_id=new_chat_id,
                 text=BotMessages.MIGRATION_MESSAGE_GROUP,
                 message_thread_id=message_thread_id,
                 parse_mode=ParseMode.MARKDOWN_V2,
