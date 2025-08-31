@@ -7,8 +7,7 @@ from bot_config import BotConfiguration
 
 # Setup logging
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", 
-    level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG
 )
 # Set higher logging level for httpx to avoid all GET and POST requests being logged
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 def main():
     """
     Main entry point for the Banana Split Telegram bot.
-    
+
     Creates and runs the bot using the BotConfiguration class.
     """
     try:
