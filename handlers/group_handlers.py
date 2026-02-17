@@ -377,11 +377,16 @@ class GroupCommandHandler(BaseHandler):
 
         chat = update.my_chat_member.chat
 
-        # Only handle group chats
-        if chat.type not in (
-            telegram.constants.ChatType.GROUP,
-            telegram.constants.ChatType.SUPERGROUP,
-        ):
+        # Only handle regular group chats, not supergroups.
+        # This handler targets the specific case where the bot is included as
+        # an initial member during group creation (which is always a regular group).
+        # Supergroups are excluded because:
+        #   - Bot additions to existing supergroups are handled by bot_added()
+        #     via new_chat_members
+        #   - Group-to-supergroup migrations also trigger my_chat_member with
+        #     LEFT->MEMBER in the new supergroup, which would incorrectly create
+        #     a duplicate chat record alongside the migration handler
+        if chat.type != telegram.constants.ChatType.GROUP:
             return
 
         old_status = update.my_chat_member.old_chat_member.status
