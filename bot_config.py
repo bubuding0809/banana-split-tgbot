@@ -11,6 +11,7 @@ from telegram import (
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    ChatMemberHandler,
     CommandHandler,
     MessageHandler,
     filters,
@@ -85,6 +86,10 @@ class BotConfiguration:
         chat_id_migrated_handler = MessageHandler(
             filters.StatusUpdate.MIGRATE, self.group_handler.chat_id_migrated
         )
+        my_chat_member_handler = ChatMemberHandler(
+            self.group_handler.handle_my_chat_member,
+            chat_member_types=ChatMemberHandler.MY_CHAT_MEMBER,
+        )
 
         # Register handlers in correct order (most specific first)
         application.add_handler(help_handler)
@@ -95,6 +100,7 @@ class BotConfiguration:
         application.add_handler(set_topic_handler)
         application.add_handler(user_shared_handler)
         application.add_handler(bot_added_handler)
+        application.add_handler(my_chat_member_handler)
         application.add_handler(chat_id_migrated_handler)
         application.add_handler(add_member_handler)
         application.add_handler(cancel_handler)

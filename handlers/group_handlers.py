@@ -303,7 +303,11 @@ class GroupCommandHandler(BaseHandler):
 
     async def bot_added(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
-        Handle bot being added to a group.
+        Handle bot being added to a group via new_chat_members status update.
+
+        This handles the case where the bot is added to an already existing group.
+        For the case where the bot is included as an initial member during group
+        creation, see handle_my_chat_member().
 
         Args:
             update: Telegram update object
@@ -345,13 +349,75 @@ class GroupCommandHandler(BaseHandler):
         await self._create_chat_in_api(update, context, message_thread_id)
 
         # Send join message
-        await update.message.reply_text(
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
             text=BotMessages.GROUP_JOIN_MESSAGE,
             message_thread_id=message_thread_id,
         )
 
         # Send usage instructions
         await self._send_usage_instructions(update, context, message_thread_id)
+
+    async def handle_my_chat_member(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ):
+        """
+        Handle my_chat_member updates for when the bot is added to a group.
+
+        This handles the case where the bot is included as an initial member
+        during group creation. Telegram sends a my_chat_member update instead
+        of a new_chat_members message in this scenario.
+
+        Args:
+            update: Telegram update object
+            context: Bot context
+        """
+        if update.my_chat_member is None:
+            return
+
+        chat = update.my_chat_member.chat
+
+        # Only handle group chats
+        if chat.type not in (
+            telegram.constants.ChatType.GROUP,
+            telegram.constants.ChatType.SUPERGROUP,
+        ):
+            return
+
+        old_status = update.my_chat_member.old_chat_member.status
+        new_status = update.my_chat_member.new_chat_member.status
+
+        # Check if bot was added (status changed from non-member to member)
+        was_not_member = old_status in (
+            telegram.constants.ChatMemberStatus.LEFT,
+            telegram.constants.ChatMemberStatus.BANNED,
+        )
+        is_now_member = new_status in (
+            telegram.constants.ChatMemberStatus.MEMBER,
+            telegram.constants.ChatMemberStatus.ADMINISTRATOR,
+            telegram.constants.ChatMemberStatus.RESTRICTED,
+        )
+
+        if not (was_not_member and is_now_member):
+            return
+
+        self.logger.info(
+            f"Bot added to group via my_chat_member: chat_id={chat.id}, "
+            f"title={chat.title}, old_status={old_status}, new_status={new_status}"
+        )
+
+        # Create chat in the API (message_thread_id is not available for
+        # my_chat_member updates)
+        await self._create_chat_in_api(update, context, None)
+
+        # Send join message
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text=BotMessages.GROUP_JOIN_MESSAGE,
+        )
+
+        # Send usage instructions
+        await self._send_usage_instructions(update, context, None)
 
     async def _create_chat_in_api(
         self,
@@ -362,7 +428,6 @@ class GroupCommandHandler(BaseHandler):
         """Create the chat in the API when bot is added."""
         # Type assertions: called after validation
         assert update.effective_chat is not None
-        assert update.message is not None
         api = self.get_api_instance(context)
         if api is None:
             return
@@ -388,7 +453,8 @@ class GroupCommandHandler(BaseHandler):
 
         if isinstance(api_result, Exception):
             self.logger.error(f"api.create_chat error: {api_result}")
-            await update.message.reply_text(
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
                 text=BotMessages.ERROR_CHAT_INIT_FAILED,
                 message_thread_id=message_thread_id,
             )
