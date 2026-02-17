@@ -21,6 +21,7 @@ from telegram import (
 from telegram.constants import ParseMode
 from telegram.ext import (
     ApplicationBuilder,
+    ChatMemberHandler,
     ContextTypes,
     CommandHandler,
     MessageHandler,
@@ -503,6 +504,45 @@ async def user_shared(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
 
+async def _create_chat(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    chat_title: Optional[str],
+    chat_type: str,
+    caller: str,
+) -> bool:
+    """Shared helper to register a chat with the backend API.
+
+    Returns True on success, False on failure.
+    """
+    full_chat = await context.bot.get_chat(chat_id=chat_id)
+
+    chat_photo_url: Optional[str] = None
+    if full_chat.photo is not None:
+        photo = await context.bot.get_file(full_chat.photo.big_file_id)
+        chat_photo_url = photo.file_path
+
+    api: Optional[Api] = context.bot_data.get("api")
+    if api is None:
+        logger.error(f"[{caller}]: Api instance not found in bot_data")
+        return False
+
+    payload = CreateChatPayload(
+        chat_id=chat_id,
+        chat_title=chat_title or f"Group:{chat_id}",
+        chat_type=chat_type,
+        chat_photo_url=chat_photo_url,
+    )
+    api_result = await api.create_chat(payload)
+
+    if isinstance(api_result, Exception):
+        logger.error(f"[{caller}] - api.create_chat: {api_result}")
+        return False
+
+    logger.info(f"[{caller}] Chat created: {api_result.message}")
+    return True
+
+
 async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat is None:
         return
@@ -522,7 +562,8 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
         filter(
             lambda x: x.username == context.bot.username,
             new_members,
-        )
+        ),
+        None,
     )
 
     if bot is None:
@@ -530,36 +571,75 @@ async def bot_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message_thread_id = update.message.message_thread_id if update.message else None
 
-    full_chat = await context.bot.get_chat(chat_id=update.effective_chat.id)
-
-    chat_photo_url: Optional[str] = None
-    if full_chat.photo is not None:
-        photo = await context.bot.get_file(full_chat.photo.big_file_id)
-        chat_photo_url = photo.file_path
-
-    api: Optional[Api] = context.bot_data.get("api")
-    if api is None:
-        return logger.error("[bot_added]: Api instance not found in bot_data")
-
-    payload = CreateChatPayload(
+    success = await _create_chat(
+        context=context,
         chat_id=update.effective_chat.id,
-        chat_title=update.effective_chat.title or f"Group:{update.effective_chat.id}",
+        chat_title=update.effective_chat.title,
         chat_type=update.effective_chat.type,
-        chat_photo_url=chat_photo_url,
+        caller="bot_added",
     )
-    api_result = await api.create_chat(payload)
 
-    if isinstance(api_result, Exception):
-        logger.error(f"[bot_added] - api.create_chat: {api_result}")
+    if success:
+        await update.message.reply_text(
+            text="🎉 Hello friends, I am here to help your split your expenses 💸!",
+            message_thread_id=message_thread_id,
+        )
+    else:
         await update.message.reply_text(
             text="⚠️ Failed to properly initialize the chat. Please try again by removing and re-adding the bot.",
             message_thread_id=message_thread_id,
         )
-    else:
-        logger.info(f"Chat created: {api_result.message}")
-        await update.message.reply_text(
+
+
+async def bot_chat_member_updated(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle my_chat_member updates — fires when the bot is added as an
+    initial member during group creation (where NEW_CHAT_MEMBERS is not sent).
+    """
+    if update.my_chat_member is None:
+        return
+
+    chat = update.my_chat_member.chat
+
+    # Only handle group / supergroup chats
+    if chat.type not in (
+        telegram.constants.ChatType.GROUP,
+        telegram.constants.ChatType.SUPERGROUP,
+    ):
+        return
+
+    old_status = update.my_chat_member.old_chat_member.status
+    new_status = update.my_chat_member.new_chat_member.status
+
+    # Only act when the bot transitioned *into* the group
+    was_not_member = old_status in (
+        telegram.constants.ChatMemberStatus.LEFT,
+        telegram.constants.ChatMemberStatus.BANNED,
+    )
+    is_now_member = new_status in (
+        telegram.constants.ChatMemberStatus.MEMBER,
+        telegram.constants.ChatMemberStatus.ADMINISTRATOR,
+    )
+
+    if not (was_not_member and is_now_member):
+        return
+
+    success = await _create_chat(
+        context=context,
+        chat_id=chat.id,
+        chat_title=chat.title,
+        chat_type=chat.type,
+        caller="bot_chat_member_updated",
+    )
+
+    if success:
+        await context.bot.send_message(
+            chat_id=chat.id,
             text="🎉 Hello friends, I am here to help your split your expenses 💸!",
-            message_thread_id=message_thread_id,
+        )
+    else:
+        await context.bot.send_message(
+            chat_id=chat.id,
+            text="⚠️ Failed to properly initialize the chat. Please try again by removing and re-adding the bot.",
         )
 
 
@@ -684,6 +764,9 @@ def main():
         user_shared,
     )
     bot_added_handler = MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, bot_added)
+    bot_member_handler = ChatMemberHandler(
+        bot_chat_member_updated, ChatMemberHandler.MY_CHAT_MEMBER
+    )
     balance_handler = CommandHandler("balance", balance)
     add_member_handler = CommandHandler(
         "start", add_member, filters.Regex(ADD_MEMBER_COMMAND)
@@ -696,6 +779,7 @@ def main():
     application.add_handler(chase_handler)
     application.add_handler(user_shared_handler)
     application.add_handler(bot_added_handler)
+    application.add_handler(bot_member_handler)
     application.add_handler(add_member_handler)
     application.add_handler(cancel_handler)
     application.add_handler(start_handler)
