@@ -3,6 +3,7 @@ Group command handlers for group chat interactions.
 """
 
 import asyncio
+import time
 from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -343,6 +344,16 @@ class GroupCommandHandler(BaseHandler):
         if bot is None:
             return
 
+        # Deduplicate: when bot is added to an existing regular group, Telegram
+        # sends both NEW_CHAT_MEMBERS and MY_CHAT_MEMBER updates. Only process
+        # the first one to arrive.
+        if not self._try_claim_chat_for_join(context, update.effective_chat.id):
+            self.logger.info(
+                f"Chat {update.effective_chat.id} already claimed by "
+                "handle_my_chat_member, skipping bot_added"
+            )
+            return
+
         message_thread_id = self.get_message_thread_id(update)
 
         # Create chat in the API
@@ -406,6 +417,16 @@ class GroupCommandHandler(BaseHandler):
         if not (was_not_member and is_now_member):
             return
 
+        # Deduplicate: when bot is added to an existing regular group, Telegram
+        # sends both NEW_CHAT_MEMBERS and MY_CHAT_MEMBER updates. Only process
+        # the first one to arrive.
+        if not self._try_claim_chat_for_join(context, chat.id):
+            self.logger.info(
+                f"Chat {chat.id} already claimed by bot_added, "
+                "skipping handle_my_chat_member"
+            )
+            return
+
         self.logger.info(
             f"Bot added to group via my_chat_member: chat_id={chat.id}, "
             f"title={chat.title}, old_status={old_status}, new_status={new_status}"
@@ -423,6 +444,38 @@ class GroupCommandHandler(BaseHandler):
 
         # Send usage instructions
         await self._send_usage_instructions(update, context, None)
+
+    def _try_claim_chat_for_join(
+        self, context: ContextTypes.DEFAULT_TYPE, chat_id: int
+    ) -> bool:
+        """
+        Try to claim a chat for join processing to prevent duplicate messages.
+
+        When a bot is added to an existing regular group, Telegram sends both
+        a NEW_CHAT_MEMBERS message update and a MY_CHAT_MEMBER update. Both
+        bot_added() and handle_my_chat_member() would fire, causing duplicate
+        welcome messages. This method ensures only the first handler to process
+        the event sends messages.
+
+        This is safe without locks because there is no await between the
+        dict check and set, so the asyncio event loop cannot interleave.
+
+        Returns:
+            True if this handler should proceed (first to claim), False otherwise.
+        """
+        processed = context.bot_data.setdefault("_processed_join_chats", {})
+        now = time.monotonic()
+
+        # Clean up entries older than 60 seconds to allow re-adding the bot
+        expired = [k for k, v in processed.items() if now - v > 60]
+        for k in expired:
+            del processed[k]
+
+        if chat_id in processed:
+            return False
+
+        processed[chat_id] = now
+        return True
 
     async def _create_chat_in_api(
         self,
