@@ -301,72 +301,25 @@ class GroupCommandHandler(BaseHandler):
                 update, context, reason_message, message_thread_id
             )
 
-    async def bot_added(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Handle bot being added to a group via new_chat_members status update.
-
-        This handles the case where the bot is added to an already existing group.
-        For the case where the bot is included as an initial member during group
-        creation, see handle_my_chat_member().
-
-        Args:
-            update: Telegram update object
-            context: Bot context
-        """
-        if not self.validate_update(update):
-            return
-
-        if update.message is None:
-            return
-
-        # Type assertion: validate_update ensures this is not None
-        assert update.effective_chat is not None
-
-        # Only handle group chats
-        if self.is_private_chat(update):
-            return
-
-        new_members = update.message.new_chat_members
-        if new_members is None:
-            return
-
-        # Check if the bot is in the new members
-        bot = next(
-            (
-                member
-                for member in new_members
-                if member.username == context.bot.username
-            ),
-            None,
-        )
-
-        if bot is None:
-            return
-
-        message_thread_id = self.get_message_thread_id(update)
-
-        # Create chat in the API
-        await self._create_chat_in_api(update, context, message_thread_id)
-
-        # Send join message
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=BotMessages.GROUP_JOIN_MESSAGE,
-            message_thread_id=message_thread_id,
-        )
-
-        # Send usage instructions
-        await self._send_usage_instructions(update, context, message_thread_id)
-
     async def handle_my_chat_member(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ):
         """
         Handle my_chat_member updates for when the bot is added to a group.
 
-        This handles the case where the bot is included as an initial member
-        during group creation. Telegram sends a my_chat_member update instead
-        of a new_chat_members message in this scenario.
+        This is the single handler for all bot-join scenarios:
+        - Bot added to an existing group or supergroup
+        - Bot included as an initial member during group creation
+
+        Telegram always sends a my_chat_member update when the bot's membership
+        status changes, making it the universal event for bot additions. The
+        NEW_CHAT_MEMBERS message update is NOT sent when the bot is an initial
+        member during group creation, so we cannot rely on it alone.
+
+        Group-to-supergroup migrations also trigger my_chat_member with
+        LEFT->MEMBER in the new supergroup. To avoid sending a false welcome
+        message, chat_id_migrated() records migrated chat IDs and we skip
+        any chat that was recently migrated.
 
         Args:
             update: Telegram update object
@@ -377,16 +330,11 @@ class GroupCommandHandler(BaseHandler):
 
         chat = update.my_chat_member.chat
 
-        # Only handle regular group chats, not supergroups.
-        # This handler targets the specific case where the bot is included as
-        # an initial member during group creation (which is always a regular group).
-        # Supergroups are excluded because:
-        #   - Bot additions to existing supergroups are handled by bot_added()
-        #     via new_chat_members
-        #   - Group-to-supergroup migrations also trigger my_chat_member with
-        #     LEFT->MEMBER in the new supergroup, which would incorrectly create
-        #     a duplicate chat record alongside the migration handler
-        if chat.type != telegram.constants.ChatType.GROUP:
+        # Only handle group and supergroup chats
+        if chat.type not in (
+            telegram.constants.ChatType.GROUP,
+            telegram.constants.ChatType.SUPERGROUP,
+        ):
             return
 
         old_status = update.my_chat_member.old_chat_member.status
@@ -404,6 +352,17 @@ class GroupCommandHandler(BaseHandler):
         )
 
         if not (was_not_member and is_now_member):
+            return
+
+        # Skip chats that were just migrated from a regular group to supergroup.
+        # chat_id_migrated() records the new supergroup ID when it processes
+        # a migration, so we can check for it here.
+        migrated_chat_ids = context.bot_data.get("_migrated_chat_ids", set())
+        if chat.id in migrated_chat_ids:
+            migrated_chat_ids.discard(chat.id)
+            self.logger.info(
+                f"Skipping my_chat_member for migrated chat {chat.id}"
+            )
             return
 
         self.logger.info(
@@ -525,6 +484,12 @@ class GroupCommandHandler(BaseHandler):
             self.logger.info(
                 f"Processing migration from old group: {old_chat_id} -> {new_chat_id}"
             )
+
+            # Record the new supergroup ID so handle_my_chat_member() knows to
+            # skip the LEFT->MEMBER update that Telegram sends in the new
+            # supergroup during migration.
+            migrated_ids = context.bot_data.setdefault("_migrated_chat_ids", set())
+            migrated_ids.add(new_chat_id)
         elif migrate_from_chat_id is not None:
             # Current chat is the result of migration from a group - SKIP THIS
             self.logger.info(

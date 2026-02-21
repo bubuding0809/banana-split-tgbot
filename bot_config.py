@@ -75,9 +75,6 @@ class BotConfiguration:
             filters.StatusUpdate.USERS_SHARED | filters.StatusUpdate.USER_SHARED,
             self.member_handler.user_shared,
         )
-        bot_added_handler = MessageHandler(
-            filters.StatusUpdate.NEW_CHAT_MEMBERS, self.group_handler.bot_added
-        )
         add_member_handler = CommandHandler(
             "start",
             self.member_handler.add_member,
@@ -99,7 +96,6 @@ class BotConfiguration:
         application.add_handler(chase_handler)
         application.add_handler(set_topic_handler)
         application.add_handler(user_shared_handler)
-        application.add_handler(bot_added_handler)
         application.add_handler(my_chat_member_handler)
         application.add_handler(chat_id_migrated_handler)
         application.add_handler(add_member_handler)
