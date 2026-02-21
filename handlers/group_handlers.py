@@ -58,26 +58,19 @@ class GroupCommandHandler(BaseHandler):
 
         keyboard = KeyboardUtils.create_mini_app_keyboard("🍌 Banana Splitz", url)
 
-        # Send the welcome/info message
-        await context.bot.send_message(
+        # Send and pin the start group message
+        pin_message = await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=BotMessages.START_MESSAGE_GROUP,
             message_thread_id=message_thread_id,
             parse_mode=ParseMode.MARKDOWN_V2,
-        )
-
-        # Send and pin the start message
-        pin_message = await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=BotMessages.PIN_START_MESSAGE,
-            message_thread_id=message_thread_id,
             reply_markup=keyboard,
         )
 
         # Try to pin the message
         try:
             await context.bot.pin_chat_message(
-                chat_id=update.effective_chat.id, message_id=pin_message.id
+                chat_id=update.effective_chat.id, message_id=pin_message.message_id
             )
         except telegram.error.BadRequest:
             pass  # Ignore if pinning fails, likely due to permissions
