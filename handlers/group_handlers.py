@@ -354,6 +354,15 @@ class GroupCommandHandler(BaseHandler):
         if not (was_not_member and is_now_member):
             return
 
+        # When a group migrates to a supergroup, Telegram sends both a MIGRATE
+        # status update and a my_chat_member LEFT->MEMBER update concurrently.
+        # With concurrent_updates=True, this handler can race ahead of
+        # chat_id_migrated() and create a duplicate chat entry before the
+        # migration handler records the new ID in _migrated_chat_ids.
+        # Yield control briefly so chat_id_migrated() can populate the set first.
+        if chat.type == telegram.constants.ChatType.SUPERGROUP:
+            await asyncio.sleep(1)
+
         # Skip chats that were just migrated from a regular group to supergroup.
         # chat_id_migrated() records the new supergroup ID when it processes
         # a migration, so we can check for it here.
@@ -544,9 +553,10 @@ class GroupCommandHandler(BaseHandler):
         try:
             message_thread_id = self.get_message_thread_id(update)
 
-            # Create chat context using the NEW chat ID
+            # Create chat context using the NEW chat ID and the correct
+            # supergroup type (update.effective_chat is the old regular group).
             chat_context = ChatUtils.create_chat_context(
-                new_chat_id, update.effective_chat.type
+                new_chat_id, telegram.constants.ChatType.SUPERGROUP
             )
 
             # Create mini-app URL with new chat context
