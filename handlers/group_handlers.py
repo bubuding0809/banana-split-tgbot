@@ -359,9 +359,14 @@ class GroupCommandHandler(BaseHandler):
         # With concurrent_updates=True, this handler can race ahead of
         # chat_id_migrated() and create a duplicate chat entry before the
         # migration handler records the new ID in _migrated_chat_ids.
-        # Yield control briefly so chat_id_migrated() can populate the set first.
+        # Poll briefly so chat_id_migrated() has time to populate the set,
+        # but return as soon as the flag appears instead of always waiting
+        # the full duration.
         if chat.type == telegram.constants.ChatType.SUPERGROUP:
-            await asyncio.sleep(1)
+            for _ in range(10):
+                await asyncio.sleep(0.5)
+                if chat.id in context.bot_data.get("_migrated_chat_ids", set()):
+                    break
 
         # Skip chats that were just migrated from a regular group to supergroup.
         # chat_id_migrated() records the new supergroup ID when it processes
