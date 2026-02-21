@@ -58,11 +58,19 @@ class GroupCommandHandler(BaseHandler):
 
         keyboard = KeyboardUtils.create_mini_app_keyboard("🍌 Banana Splitz", url)
 
-        pin_message = await context.bot.send_message(
+        # Send the welcome/info message
+        await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=BotMessages.START_MESSAGE_GROUP,
             message_thread_id=message_thread_id,
             parse_mode=ParseMode.MARKDOWN_V2,
+        )
+
+        # Send and pin the start message
+        pin_message = await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=BotMessages.PIN_START_MESSAGE,
+            message_thread_id=message_thread_id,
             reply_markup=keyboard,
         )
 
