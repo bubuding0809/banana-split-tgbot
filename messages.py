@@ -9,10 +9,18 @@ class BotMessages:
     # Usage and Help Messages
     USAGE_GUIDE = """
 *Track Personal Expenses*: Send me a direct message\\! For example:
-`15 USD Lunch`
-`+10000 my precious salary\\!` \\(Income\\)
-`30000 JPY Japanese whiskey` \\(Currency\\)
-`200 beer 2024-12-26` \\(Date\\)
+```
+15 USD Lunch
+```
+```
++10000 my precious salary!
+``` \\(Income\\)
+```
+30000 JPY Japanese whiskey
+``` \\(Currency\\)
+```
+200 beer 2024-12-26
+``` \\(Date\\)
 
 *Commands:*
 \\- `/list`: See your history
