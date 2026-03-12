@@ -298,12 +298,13 @@ class UserCommandHandler(BaseHandler):
             # Attempt to parse the right side as a date
             parsed_date = dateparser.parse(right_side)
             if parsed_date:
-                # Normalise to UTC midnight
-                date = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                if date.tzinfo is None:
-                    date = date.replace(tzinfo=timezone.utc)
+                if parsed_date.tzinfo is None:
+                    date = parsed_date.replace(tzinfo=timezone.utc)
                 else:
-                    date = date.astimezone(timezone.utc)
+                    date = parsed_date.astimezone(timezone.utc)
+                
+                # Normalise to UTC midnight
+                date = date.replace(hour=0, minute=0, second=0, microsecond=0)
                 
                 # Treat the left side as the remaining text to tokenize
                 text = left_side
@@ -335,11 +336,13 @@ class UserCommandHandler(BaseHandler):
                 if UserCommandHandler._DATE_RE.match(token) or token_lower in UserCommandHandler._SAFE_SINGLE_DATES:
                     parsed_date = dateparser.parse(token)
                     if parsed_date:
-                        date = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                        if date.tzinfo is None:
-                            date = date.replace(tzinfo=timezone.utc)
+                        if parsed_date.tzinfo is None:
+                            date = parsed_date.replace(tzinfo=timezone.utc)
                         else:
-                            date = date.astimezone(timezone.utc)
+                            date = parsed_date.astimezone(timezone.utc)
+                        
+                        # Normalise to UTC midnight
+                        date = date.replace(hour=0, minute=0, second=0, microsecond=0)
                         continue
 
             # Everything else is part of the description
