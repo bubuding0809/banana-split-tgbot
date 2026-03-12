@@ -148,6 +148,38 @@ No worries, you can help them join by sharing their contact with me\\!
     )
     GROUP_START_INSTRUCTION = "Use `/start@{bot_username}` to start me\\!"
 
+    # Personal Expense Messages
+    EXPENSE_CREATED = "✅ Recorded: *{description}* — {currency} {amount}"
+    EXPENSE_PARSE_HINT = (
+        "💡 To log a personal expense, send a message like:\n"
+        "  `12.50 Lunch`\n"
+        "  `Grab ride 8.90`\n"
+        "  `Coffee 5`"
+    )
+    ERROR_EXPENSE_CREATE_FAILED = (
+        "⚠️ Failed to record expense. Please try again."
+    )
+    ERROR_EXPENSE_NOT_REGISTERED = (
+        "⚠️ You need to /start the bot first before logging expenses."
+    )
+    EXPENSE_DELETED = "🗑 *Expense deleted\\.*"
+    ERROR_EXPENSE_DELETE_FAILED = (
+        "⚠️ Failed to delete expense. It may have already been removed."
+    )
+
+    # List & Stats Messages
+    LIST_CHOOSE_PERIOD = "Choose a period"
+    LIST_CANCELLED = "Cancelled\\."
+    LIST_EMPTY = "No expenses recorded yet\\. Send a message like `12.50 Lunch` to get started\\!"
+    LIST_NO_EXPENSES_FOR_PERIOD = "No expenses found for *{period_name}*\\."
+    ERROR_LIST_FAILED = "⚠️ Failed to fetch expenses. Please try again."
+
+    STATS_CHOOSE_PERIOD = "Choose a period"
+    STATS_CANCELLED = "Cancelled\\."
+    STATS_EMPTY = "No expenses recorded yet\\. Send a message like `12.50 Lunch` to get started\\!"
+    STATS_NO_EXPENSES_FOR_PERIOD = "No expenses found for *{period_name}*\\."
+    ERROR_STATS_FAILED = "⚠️ Failed to fetch expenses. Please try again."
+
     # Member Management UI
     ADD_MEMBER_SELECT_BUTTON = "Select Users 🧑‍🧒‍🧒"
     ADD_MEMBER_CANCEL_BUTTON = "/cancel"

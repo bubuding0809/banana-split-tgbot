@@ -103,6 +103,45 @@ class MigrateChatResult(ApiResult):
     pass
 
 
+class CreateExpensePayload(BaseModel):
+    chat_id: int
+    creator_id: int
+    payer_id: int
+    description: str
+    amount: float
+    date: str  # ISO 8601 string
+    split_mode: str = "EQUAL"
+    participant_ids: list[int] = []
+    send_notification: bool = False
+    currency: Optional[str] = Field(default=None)
+
+
+class Expense(BaseModel):
+    id: str
+    chat_id: str
+    creator_id: str
+    payer_id: str
+    description: str
+    amount: float
+    currency: str
+    split_mode: str
+    date: str
+    created_at: str
+    updated_at: str
+
+
+
+class GetAllExpensesResult(ApiResult):
+    expenses: list[Expense] = Field(default_factory=list)
+
+class CreateExpenseResult(ApiResult):
+    expense: Optional[Expense] = Field(default=None)
+
+
+class DeleteExpenseResult(ApiResult):
+    success: bool = False
+
+
 class Api:
     def __init__(self):
         self.default_headers = {"X-Api-Key": env.API_KEY}
@@ -341,6 +380,131 @@ class Api:
             )
         except Exception as e:
             logger.error(f"[API] PATCH chat/{payload.old_chat_id}/migrate - Exception: {e}")
+            return e
+
+    async def create_expense(
+        self, payload: CreateExpensePayload
+    ) -> Union[CreateExpenseResult, Exception]:
+        try:
+            request_data = {
+                "chatId": payload.chat_id,
+                "creatorId": payload.creator_id,
+                "payerId": payload.payer_id,
+                "description": payload.description,
+                "amount": payload.amount,
+                "date": payload.date,
+                "splitMode": payload.split_mode,
+                "participantIds": payload.participant_ids,
+                "sendNotification": payload.send_notification,
+            }
+            if payload.currency is not None:
+                request_data["currency"] = payload.currency
+
+            async with self.aio_session.post(
+                "expense", json=request_data
+            ) as response:
+                data = await response.json()
+                logger.debug(f"[API] POST expense response: {data}")
+                response.raise_for_status()
+
+                return CreateExpenseResult(
+                    expense=Expense(
+                        id=data.get("id"),
+                        chat_id=data.get("chatId"),
+                        creator_id=data.get("creatorId"),
+                        payer_id=data.get("payerId"),
+                        description=data.get("description"),
+                        amount=data.get("amount"),
+                        currency=data.get("currency"),
+                        split_mode=data.get("splitMode"),
+                        date=data.get("date"),
+                        created_at=data.get("createdAt"),
+                        updated_at=data.get("updatedAt"),
+                    ),
+                    status=response.status,
+                    message="Expense created successfully",
+                )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(f"[API] POST expense - HTTP {e.status}: {e.message}")
+            return CreateExpenseResult(
+                expense=None,
+                status=e.status,
+                message=f"HTTP {e.status}: {e.message}",
+            )
+        except Exception as e:
+            logger.error(f"[API] POST expense - Exception: {e}")
+            return e
+
+
+    async def get_all_expenses(
+        self, chat_id: int
+    ) -> Union[GetAllExpensesResult, Exception]:
+        try:
+            async with self.aio_session.get(
+                f"chat/{chat_id}/expenses",
+                headers=self.default_headers,
+            ) as response:
+                data = await response.json()
+                if response.status in (200, 201):
+                    logger.debug(f"[API] GET chat/{chat_id}/expenses response: {data}")
+                    expenses = []
+                    for exp in data:
+                        expenses.append(Expense(
+                            id=str(exp.get("id")),
+                            chat_id=str(exp.get("chatId")),
+                            creator_id=str(exp.get("creatorId")),
+                            payer_id=str(exp.get("payerId")),
+                            description=str(exp.get("description")),
+                            amount=float(exp.get("amount")),
+                            currency=str(exp.get("currency")),
+                            split_mode=str(exp.get("splitMode")),
+                            date=str(exp.get("date")),
+                            created_at=str(exp.get("createdAt", "")),
+                            updated_at=str(exp.get("updatedAt", ""))
+                        ))
+                    return GetAllExpensesResult(
+                        status=response.status,
+                        message="Expenses retrieved successfully",
+                        expenses=expenses,
+                    )
+                else:
+                    logger.warning(f"[API] GET chat/{chat_id}/expenses - HTTP {response.status}: {data}")
+                    return GetAllExpensesResult(
+                        status=response.status,
+                        message=data.get("message", "Failed to retrieve expenses"),
+                        expenses=[]
+                    )
+        except Exception as e:
+            logger.error(f"[API] GET chat/{chat_id}/expenses - Exception: {e}")
+            return e
+
+    async def delete_expense(
+        self, expense_id: str
+    ) -> Union[DeleteExpenseResult, Exception]:
+        try:
+            async with self.aio_session.delete(
+                f"expense/{expense_id}"
+            ) as response:
+                data = await response.json()
+                logger.debug(f"[API] DELETE expense/{expense_id} response: {data}")
+                response.raise_for_status()
+
+                return DeleteExpenseResult(
+                    success=data.get("success", True),
+                    status=response.status,
+                    message=data.get("message", "Expense deleted successfully"),
+                )
+        except aiohttp.ClientResponseError as e:
+            logger.warning(
+                f"[API] DELETE expense/{expense_id} - HTTP {e.status}: {e.message}"
+            )
+            return DeleteExpenseResult(
+                success=False,
+                status=e.status,
+                message=f"HTTP {e.status}: {e.message}",
+            )
+        except Exception as e:
+            logger.error(f"[API] DELETE expense/{expense_id} - Exception: {e}")
             return e
 
     async def clean_up(self):
