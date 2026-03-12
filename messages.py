@@ -8,27 +8,30 @@ class BotMessages:
 
     # Usage and Help Messages
     USAGE_GUIDE = """
-*Track Personal Expenses*: Send me a direct message\\! For example:
+*Track Personal Expenses*: Send me a direct message\! For example:
 ```
 15 USD Lunch
 ```
 ```
 30000 JPY Japanese whiskey
-``` \\(Currency\\)
+``` \(Currency\)
 ```
-200 beer 2024-12-26
-``` \\(Date\\)
+200 beer, last friday
+``` \(Date via comma\)
+```
+12 Grab ride yesterday
+``` \(Simple Date\)
 
 *Commands:*
-\\- `/list`: See your history
-\\- `/stats`: See your spending summary
+\- `/list`: See your history
+\- `/stats`: See your spending summary
 
 *Group Expenses:*
-1\\. *Add me to a group chat*: Click the "Add to group" button below or go to your group chat and add me as a member\\.
-2\\. *Start the bot*: Use the `/start@{bot_username}` command in the group chat to kick things off\\.
-3\\. *Get your friends to join*: Have them open the mini\\-app in the group chat to split expenses\\.
+1\. *Add me to a group chat*: Click the "Add to group" button below or go to your group chat and add me as a member\.
+2\. *Start the bot*: Use the `/start@{bot_username}` command in the group chat to kick things off\.
+3\. *Get your friends to join*: Have them open the mini\-app in the group chat to split expenses\.
 
-🚀 Happy tracking and splitting\\! 🍌🍌🍌
+🚀 Happy tracking and splitting\! 🍌🍌🍌
 """
 
     HELP_MESSAGE = """
@@ -168,7 +171,8 @@ No worries, you can help them join by sharing their contact with me\\!
         "💡 To log a personal expense, send a message like:\n"
         "  `12.50 Lunch`\n"
         "  `Grab ride 8.90`\n"
-        "  `Coffee 5`"
+        "  `Coffee 5`\n"
+        "  `25.50 Movie tickets, 2 days ago`"
     )
     ERROR_EXPENSE_CREATE_FAILED = (
         "⚠️ Failed to record expense. Please try again."
