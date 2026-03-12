@@ -8,13 +8,17 @@ class BotMessages:
 
     # Usage and Help Messages
     USAGE_GUIDE = """
-1\\. *Add me to a group chat*: Click the "Add to group" button below or go to your group chat and add me as a member\\.
+1\\. *Track Personal Expenses*: Send me a direct message\\! For example: `15 USD Lunch`
+  \\- See your history: `/list`
+  \\- See your spending summary: `/stats`
 
-2\\. *Start the bot*: Use the `/start@{bot_username}` command in the group chat to kick things off\\. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there\\.
+2\\. *Add me to a group chat*: Click the "Add to group" button below or go to your group chat and add me as a member\\.
 
-3\\. *Get your friends to join*: Have them open the mini\\-app in the group chat\\. This will make them available for you to split expenses with\\.
+3\\. *Start the bot*: Use the `/start@{bot_username}` command in the group chat to kick things off\\. If your group has topics enabled, use the `/start@{bot_username}` command in your desired topic to receive notifications there\\.
 
-🚀 Happy splitting\\! 🍌🍌🍌
+4\\. *Get your friends to join*: Have them open the mini\\-app in the group chat\\. This will make them available for you to split expenses with\\.
+
+🚀 Happy tracking and splitting\\! 🍌🍌🍌
 """
 
     HELP_MESSAGE = """
