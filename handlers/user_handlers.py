@@ -3,7 +3,8 @@ User command handlers for private chat interactions.
 """
 
 import asyncio
-import dateparser
+import parsedatetime as pdt
+_cal = pdt.Calendar()
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -296,15 +297,10 @@ class UserCommandHandler(BaseHandler):
             right_side = parts[1].strip()
             
             # Attempt to parse the right side as a date
-            parsed_date = dateparser.parse(right_side)
+            time_struct, parse_status = _cal.parse(right_side)
+            parsed_date = datetime(*time_struct[:6]) if parse_status else None
             if parsed_date:
-                if parsed_date.tzinfo is None:
-                    date = parsed_date.replace(tzinfo=timezone.utc)
-                else:
-                    date = parsed_date.astimezone(timezone.utc)
-                
-                # Normalise to UTC midnight
-                date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+                date = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
                 
                 # Treat the left side as the remaining text to tokenize
                 text = left_side
@@ -334,7 +330,8 @@ class UserCommandHandler(BaseHandler):
                 token_lower = token.lower()
                 # Only use dateparser for tokens if they match exact YYYY-MM-DD or our safe whitelist
                 if UserCommandHandler._DATE_RE.match(token) or token_lower in UserCommandHandler._SAFE_SINGLE_DATES:
-                    parsed_date = dateparser.parse(token)
+                    time_struct, parse_status = _cal.parse(token)
+                    parsed_date = datetime(*time_struct[:6]) if parse_status else None
                     if parsed_date:
                         if parsed_date.tzinfo is None:
                             date = parsed_date.replace(tzinfo=timezone.utc)
