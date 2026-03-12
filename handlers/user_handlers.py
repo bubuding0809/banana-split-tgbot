@@ -308,7 +308,12 @@ class UserCommandHandler(BaseHandler):
         # 2. Tokenize the remaining text
         tokens = text.split()
 
-        for token in tokens:
+        skip_next = False
+        for idx, token in enumerate(tokens):
+            if skip_next:
+                skip_next = False
+                continue
+
             # Try amount (only accept the first one found)
             if amount is None:
                 # Strip leading $ for matching
@@ -328,7 +333,24 @@ class UserCommandHandler(BaseHandler):
             # Try date
             if date is None:
                 token_lower = token.lower()
-                # Only use dateparser for tokens if they match exact YYYY-MM-DD or our safe whitelist
+                
+                # Check for two-word date phrases without a comma (like "last saturday", "next monday")
+                if idx < len(tokens) - 1:
+                    next_token_lower = tokens[idx + 1].lower()
+                    if token_lower in ("last", "next", "this") and next_token_lower in UserCommandHandler._SAFE_SINGLE_DATES:
+                        two_word_date = f"{token_lower} {next_token_lower}"
+                        time_struct, parse_status = _cal.parse(two_word_date)
+                        parsed_date = datetime(*time_struct[:6]) if parse_status else None
+                        if parsed_date:
+                            if parsed_date.tzinfo is None:
+                                date = parsed_date.replace(tzinfo=timezone.utc)
+                            else:
+                                date = parsed_date.astimezone(timezone.utc)
+                            date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+                            skip_next = True
+                            continue
+
+                # Only use parsedatetime for tokens if they match exact YYYY-MM-DD or our safe whitelist
                 if UserCommandHandler._DATE_RE.match(token) or token_lower in UserCommandHandler._SAFE_SINGLE_DATES:
                     time_struct, parse_status = _cal.parse(token)
                     parsed_date = datetime(*time_struct[:6]) if parse_status else None
@@ -340,6 +362,11 @@ class UserCommandHandler(BaseHandler):
                         
                         # Normalise to UTC midnight
                         date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+                        
+                        # If a naked day name resolved to the future, assume they meant the past
+                        if date > datetime.now(timezone.utc):
+                            date -= timedelta(days=7)
+                            
                         continue
 
             # Everything else is part of the description

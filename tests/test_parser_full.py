@@ -50,3 +50,9 @@ class TestDateParsing:
         assert res.description == "Lunch, with friends"
         assert res.date is None
 
+
+    def test_non_delimited_last_saturday(self):
+        res = UserCommandHandler.parse_expense("500 dinner last saturday")
+        assert res.amount == 500.0
+        assert res.description == "dinner"
+        assert res.date is not None
