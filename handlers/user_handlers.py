@@ -3,6 +3,7 @@ User command handlers for private chat interactions.
 """
 
 import asyncio
+import dateparser
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -245,6 +246,12 @@ class UserCommandHandler(BaseHandler):
     _AMOUNT_RE = re.compile(r"^\$?(\d+(?:\.\d{1,2})?)$")
     _CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
     _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    
+    _SAFE_SINGLE_DATES = frozenset([
+        "yesterday", "today", "tomorrow", "monday", "tuesday", 
+        "wednesday", "thursday", "friday", "saturday", "sunday",
+        "mon", "tue", "wed", "thu", "fri", "sat", "sun"
+    ])
 
     @staticmethod
     def parse_expense(text: str) -> Optional[ParsedExpense]:
@@ -275,11 +282,34 @@ class UserCommandHandler(BaseHandler):
         if not text:
             return None
 
-        tokens = text.split()
         amount: Optional[float] = None
         currency: Optional[str] = None
         date: Optional[datetime] = None
         desc_parts: list[str] = []
+        
+        # 1. Delimiter-Based Parsing
+        # Check if the user provided a comma to explicitly separate the date
+        if "," in text:
+            # Split by the last comma
+            parts = text.rsplit(",", 1)
+            left_side = parts[0].strip()
+            right_side = parts[1].strip()
+            
+            # Attempt to parse the right side as a date
+            parsed_date = dateparser.parse(right_side)
+            if parsed_date:
+                # Normalise to UTC midnight
+                date = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                if date.tzinfo is None:
+                    date = date.replace(tzinfo=timezone.utc)
+                else:
+                    date = date.astimezone(timezone.utc)
+                
+                # Treat the left side as the remaining text to tokenize
+                text = left_side
+
+        # 2. Tokenize the remaining text
+        tokens = text.split()
 
         for token in tokens:
             # Try amount (only accept the first one found)
@@ -298,22 +328,19 @@ class UserCommandHandler(BaseHandler):
                 currency = token
                 continue
 
-            # Try date — "yesterday" keyword
-            if date is None and token.lower() == "yesterday":
-                date = datetime.now(timezone.utc).replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                ) - timedelta(days=1)
-                continue
-
-            # Try date — YYYY-MM-DD
-            if date is None and UserCommandHandler._DATE_RE.match(token):
-                try:
-                    date = datetime.strptime(token, "%Y-%m-%d").replace(
-                        tzinfo=timezone.utc
-                    )
-                    continue
-                except ValueError:
-                    pass  # invalid date like 2024-02-30, treat as description
+            # Try date
+            if date is None:
+                token_lower = token.lower()
+                # Only use dateparser for tokens if they match exact YYYY-MM-DD or our safe whitelist
+                if UserCommandHandler._DATE_RE.match(token) or token_lower in UserCommandHandler._SAFE_SINGLE_DATES:
+                    parsed_date = dateparser.parse(token)
+                    if parsed_date:
+                        date = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                        if date.tzinfo is None:
+                            date = date.replace(tzinfo=timezone.utc)
+                        else:
+                            date = date.astimezone(timezone.utc)
+                        continue
 
             # Everything else is part of the description
             desc_parts.append(token)
