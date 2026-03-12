@@ -11,6 +11,7 @@ from telegram import (
 from telegram.ext import (
     Application,
     ApplicationBuilder,
+    CallbackQueryHandler,
     ChatMemberHandler,
     CommandHandler,
     MessageHandler,
@@ -69,6 +70,8 @@ class BotConfiguration:
         set_topic_handler = CommandHandler("set_topic", self.group_handler.set_topic)
         balance_handler = CommandHandler("balance", self.group_handler.balance)
         summary_handler = CommandHandler("summary", self.group_handler.summary)
+        list_handler = CommandHandler("list", self.user_handler.list_expenses)
+        stats_handler = CommandHandler("stats", self.user_handler.stats)
 
         # Message handlers
         user_shared_handler = MessageHandler(
@@ -88,6 +91,30 @@ class BotConfiguration:
             chat_member_types=ChatMemberHandler.MY_CHAT_MEMBER,
         )
 
+        # Personal expense handler — catches plain text in private DMs
+        private_expense_handler = MessageHandler(
+            filters.TEXT & ~filters.COMMAND & filters.ChatType.PRIVATE,
+            self.user_handler.handle_personal_expense,
+        )
+
+        # Callback query handler for undo-ing personal expenses
+        undo_expense_handler = CallbackQueryHandler(
+            self.user_handler.handle_undo_expense,
+            pattern=r"^undo_expense:",
+        )
+
+        # Callback query handler for stats period selection
+        stats_period_handler = CallbackQueryHandler(
+            self.user_handler.handle_stats_period,
+            pattern=r"^stats_period_",
+        )
+
+        # Callback query handler for list period selection
+        list_period_handler = CallbackQueryHandler(
+            self.user_handler.handle_list_period,
+            pattern=r"^list_period_",
+        )
+
         # Register handlers in correct order (most specific first)
         application.add_handler(help_handler)
         application.add_handler(pin_handler)
@@ -95,12 +122,18 @@ class BotConfiguration:
         application.add_handler(summary_handler)
         application.add_handler(chase_handler)
         application.add_handler(set_topic_handler)
+        application.add_handler(list_handler)
+        application.add_handler(stats_handler)
         application.add_handler(user_shared_handler)
         application.add_handler(my_chat_member_handler)
         application.add_handler(chat_id_migrated_handler)
         application.add_handler(add_member_handler)
         application.add_handler(cancel_handler)
         application.add_handler(start_handler)
+        application.add_handler(private_expense_handler)
+        application.add_handler(undo_expense_handler)
+        application.add_handler(stats_period_handler)
+        application.add_handler(list_period_handler)
 
         # Error handler
         application.add_error_handler(self._error_handler)
@@ -166,6 +199,8 @@ class BotConfiguration:
         # Commands for private chats
         private_commands = [
             *common_commands,
+            BotCommand("list", "Show recent expenses"),
+            BotCommand("stats", "Show expense stats"),
             # BotCommand("chase", "Chase someone for payment"),  # Commented out as in original
         ]
         await application.bot.set_my_commands(
