@@ -13,9 +13,6 @@ class BotMessages:
 15 USD Lunch
 ```
 ```
-+10000 my precious salary!
-``` \\(Income\\)
-```
 30000 JPY Japanese whiskey
 ``` \\(Currency\\)
 ```
