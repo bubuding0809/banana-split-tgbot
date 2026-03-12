@@ -16,11 +16,14 @@ class BotMessages:
 30000 JPY Japanese whiskey
 ``` \\(Currency\\)
 ```
-200 beer, last friday
-``` \\(Date via comma\\)
-```
 12 Grab ride yesterday
 ``` \\(Simple Date\\)
+```
+500 dinner last saturday
+``` \\(Relative Date\\)
+```
+200 beer, 2 days ago
+``` \\(Complex Date via comma\\)
 
 *Commands:*
 \\- `/list`: See your history
@@ -172,6 +175,8 @@ No worries, you can help them join by sharing their contact with me\\!
         "  `12.50 Lunch`\n"
         "  `Grab ride 8.90`\n"
         "  `Coffee 5`\n"
+        "  `15 Dinner yesterday`\n"
+        "  `500 dinner last saturday`\n"
         "  `25.50 Movie tickets, 2 days ago`"
     )
     ERROR_EXPENSE_CREATE_FAILED = (
