@@ -28,7 +28,7 @@ class ChatUtils:
         """
         chat_context = {
             "chat_id": chat_id,
-            "chat_type": chat_type,
+            "chat_type": "p" if chat_type == "private" else "g",
         }
         chat_context_bytes = json.dumps(chat_context).encode("utf-8")
         return base64.b64encode(chat_context_bytes).decode("utf-8")
